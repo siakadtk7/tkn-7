@@ -1,0 +1,609 @@
+{% extends 'base.html' %}
+
+{% block title %}Laporan Perkembangan{% endblock %}
+
+{% block content %}
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+
+<style>
+    .modal {
+        z-index: 9999 !important;
+        position: fixed; /* biar selalu di atas */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+    .modal-backdrop {
+        z-index: 9998 !important;
+    }
+</style>
+
+<!-- ================= Wrapper Utama ================= -->
+<div style="background-color: white;padding: 1.5rem;border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);margin-top: -4rem;
+            max-width: 950px;margin-left: auto;margin-right: auto;position: relative;" 
+     class="form-wrapper">
+
+<!-- ================= Filter & Pencarian ================= -->
+<div style="padding-bottom: 10px; overflow-x: auto; white-space: nowrap;">
+  <form method="get" 
+        class="d-flex flex-nowrap align-items-center gap-2 mb-3" 
+        style="width: 100%;">
+
+    <!-- Input Nama -->
+    <input type="text" 
+           name="q" 
+           class="form-control" 
+           placeholder="Nama, Nomor Induk" 
+           value="{{ q }}" 
+           style="flex: 1; min-width: 200px;">
+
+    <!-- Tahun Ajaran -->
+    <select name="tahun_ajaran" 
+            class="form-select" 
+            style="flex: 1; min-width: 180px;">
+        <option value="">-- Tahun Ajaran --</option>
+        {% for ta in tahun_ajaran_list %}
+            <option value="{{ ta }}" {% if ta == tahun_ajaran %}selected{% endif %}>
+                Tahun Ajaran {{ ta }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <!-- Semester -->
+    <select name="semester" 
+            class="form-select" 
+            style="flex: 1; min-width: 180px;">
+        <option value="">-- Semester --</option>
+        <option value="1" {% if semester == '1' %}selected{% endif %}>Semester Ganjil</option>
+        <option value="2" {% if semester == '2' %}selected{% endif %}>Semester Genap</option>
+    </select>
+
+    {% if request.user.profile.role != 'guru' %}
+    <!-- Kelas -->
+    <select name="kelas" 
+            class="form-select" 
+            style="flex: 1; min-width: 150px;">
+        <option value="">-- Pilih Kelas --</option>
+        {% for k in kelas_list %}
+            <option value="{{ k.id }}" {% if k.id|stringformat:"s" == kelas_id %}selected{% endif %}>
+                {{ k.nama }}
+            </option>
+        {% endfor %}
+    </select>
+    {% endif %}
+
+    <!-- Tombol Filter -->
+    <button type="submit" 
+            class="btn btn-primary" 
+            title="Filter"
+            style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+                   color: #fff; border: none; border-radius: 6px;
+                   padding: 6px 16px; font-weight: 500;">
+        <i class='bx bx-filter-alt'></i>
+    </button>
+
+    <!-- Tombol Reset -->
+    <a href="{% url 'laporan_perkembangan' %}" 
+       class="btn btn-secondary"
+       title="Reset"
+       style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+              color: #fff; border: none; border-radius: 6px;
+              padding: 6px 16px; font-weight: 500;">
+        <i class='bx bx-refresh'></i>
+    </a>
+  </form>
+</div>
+
+        <!-- ================= Header ================= -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Laporan Perkembangan Siswa {% if kelas_terpilih %} - Kelas {{ kelas_terpilih.nama }}{% endif %}</h5>
+            {% if request.user.profile.role == 'admin' %}
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center" 
+                    style="width: 50px; height: 40px;" 
+                    data-bs-toggle="modal" data-bs-target="#tambahAspekModal" title="Tambah Aspek Penilaian">
+                    <i class='bx bx-list-plus fs-4'></i>
+                </button>
+                <button type="button" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center" 
+                    style="width: 50px; height: 40px;" 
+                    data-bs-toggle="modal" data-bs-target="#kelolaAspekModal" title="Kelola Aspek Penilaian">
+                    <i class='bx bx-edit-alt fs-4'></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    
+        <!-- ================= Student Table Section ================= -->
+        {% if siswa_page %}
+            <!-- Tabel Laporan -->
+    <table class="table table-bordered align-middle">
+        <thead class="table-light text-center">
+            <tr>
+                <th>No</th>
+                <th>Foto</th> 
+                <th>Nama</th>
+                <th>Nomor Induk</th>
+                <th>Laporan Perkembangan</th>
+                {% if request.user.profile.role != 'kepala' %}
+                    <th>Aksi</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for siswa in siswa_page %}
+            <tr>
+                <td class="text-center">{{ forloop.counter0|add:siswa_page.start_index }}</td>
+                <td class="text-center">
+                    {% if siswa.foto %}
+                        <img src="{{ siswa.foto.url }}" alt="Foto"  width="50" height="50" style="object-fit: cover;">
+                    {% else %}
+                        <i class="bi bi-person-circle" style="font-size: 2rem;"></i>
+                    {% endif %}
+                </td>
+                <td>{{ siswa.nama }}</td>
+                <td class="text-center">{{ siswa.nomor_induk }}</td>
+                <td>
+                    {% with laporan=siswa.laporan_list %}
+                        {% if laporan %}
+                            <ul class="mb-0 ps-3">
+                            {% for lp in laporan %}
+                                <li>{{ lp.status_display }}</li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span class="text-muted">Belum ada laporan</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                {% if request.user.profile.role != 'kepala' %}
+                <td class="text-center">
+                    {% if siswa.laporan_list %}
+                        {% for lp in siswa.laporan_list %}
+                            <!-- Tombol Edit per Laporan -->
+                            <a href="{% url 'laporan_edit' lp.id %}" class="btn btn-sm btn-warning mb-1" title="Edit Laporan Semester {{ lp.semester }}">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <!-- Tombol Hapus per Laporan -->
+                            <a href="#" class="btn btn-sm btn-danger mb-1" 
+                               data-bs-toggle="modal" 
+                               data-bs-target="#deleteModal"
+                               data-id="{{ lp.id }}"
+                               data-nama="{{ siswa.nama }}" 
+                               title="Hapus Laporan Semester {{ lp.semester }}">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Tombol Tambah Laporan jika belum ada -->
+                        <a href="{% url 'laporan_tambah' siswa.id %}?semester={{ semester }}" title="Tambah Laporan">
+                            <i class='bx bx-plus-circle' style='font-size: 28px; color: grey;'></i>
+                        </a>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">Data tidak ditemukan</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+        {% else %}
+        <div class="text-center mt-5">
+            <p class="text-muted">Silahkan pilih kelas terlebih dahulu untuk menampilkan data siswa.</p>
+        </div>
+        {% endif %}
+<!-- Pagination -->
+{% if siswa_page.paginator.num_pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if siswa_page.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1&{{ request.GET.urlencode|cut:'page' }}">&laquo;&laquo;</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.previous_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&laquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&laquo;&laquo;</a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&laquo;</a>
+            </li>
+        {% endif %}
+
+        {% for i in siswa_page.paginator.page_range %}
+            {% if siswa_page.number == i %}
+                <li class="page-item active" aria-current="page">
+                    <a class="page-link" href="#">{{ i }}</a>
+                </li>
+            {% elif i > siswa_page.number|add:'-3' and i < siswa_page.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}&{{ request.GET.urlencode|cut:'page' }}">{{ i }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if siswa_page.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.next_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;&raquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&raquo;</a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&raquo;&raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% if request.user.profile.role != 'kepala' %}
+<!-- Modal Hapus Laporan -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteForm">
+        {% csrf_token %}
+        <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+            <h5 class="modal-title">Konfirmasi Hapus</h5>
+        </div>
+        <div class="modal-body">
+          Apakah yakin ingin menghapus laporan siswa <strong id="deleteNama"></strong>?
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">Hapus</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+var deleteModal = document.getElementById('deleteModal');
+deleteModal.addEventListener('show.bs.modal', function(event){
+    var button = event.relatedTarget;
+    var id = button.getAttribute('data-id'); // id laporan, bukan siswa
+    var nama = button.getAttribute('data-nama');
+    deleteModal.querySelector('#deleteNama').textContent = nama;
+    deleteModal.querySelector('#deleteForm').action = "/laporan/hapus/" + id + "/";
+});
+</script>
+{% if request.user.profile.role == 'admin' %}
+<!-- Modal Tambah Aspek -->
+<div class="modal fade" id="tambahAspekModal" tabindex="-1" aria-labelledby="tambahAspekModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+                <h5 class="modal-title" id="tambahAspekModalLabel" style="font-weight: bolder;">Tambah Aspek Penilaian Baru</h5>
+            </div>
+            <div class="modal-body">
+                <div id="aspek-error-alert" class="alert alert-danger d-none" role="alert"></div>
+                <div class="mb-3">
+                    <label for="namaAspekInput" class="form-label">Nama Aspek</label>
+                    <input type="text" class="form-control" id="namaAspekInput">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="simpanAspekBtn">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Kelola Aspek -->
+<div class="modal fade" id="kelolaAspekModal" tabindex="-1" aria-labelledby="kelolaAspekModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+                <h5 class="modal-title text-center w-100" id="kelolaAspekModalLabel" style="font-weight: bolder;">Kelola Aspek Penilaian</h5>
+            </div>
+            <div class="modal-body">
+                <div id="kelola-aspek-error" class="alert alert-danger d-none" role="alert"></div>
+                <ul class="list-group" id="aspek-list-management">
+                    {% for aspek in all_aspek %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center" data-aspek-id="{{ aspek.id }}">
+                        {{ aspek.nama_aspek }}
+                        <span class="ms-auto">
+                            <button type="button" class="btn btn-warning btn-sm edit-aspek-btn me-2">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm delete-aspek-btn">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal Hapus Aspek -->
+<div class="modal fade" id="deleteAspekModal" tabindex="-1" aria-labelledby="deleteAspekModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteAspekForm">
+        {% csrf_token %}
+        <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+            <h5 class="modal-title" id="deleteAspekModalLabel">Konfirmasi Hapus Aspek</h5>
+        </div>
+        <div class="modal-body">
+          Apakah Anda yakin ingin menghapus aspek <strong id="deleteAspekNama"></strong>?
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">Hapus</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit Aspek -->
+<div class="modal fade" id="editAspekModal" tabindex="-1" aria-labelledby="editAspekModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #0382c7; color: white;">
+                <h5 class="modal-title" id="editAspekModalLabel" style="font-weight: bolder;">Edit Aspek Penilaian</h5>
+            </div>
+            <div class="modal-body">
+                <div id="edit-aspek-error" class="alert alert-danger d-none" role="alert"></div>
+                <input type="hidden" id="editAspekId">
+                <div class="mb-3">
+                    <label for="editAspekNamaInput" class="form-label">Nama Aspek</label>
+                    <input type="text" class="form-control" id="editAspekNamaInput">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="updateAspekBtn">Simpan Perubahan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // --- Script for Adding Aspects ---
+    const simpanAspekBtn = document.getElementById('simpanAspekBtn');
+    if (simpanAspekBtn) {
+        const namaAspekInput = document.getElementById('namaAspekInput');
+        const tambahAspekModal = new bootstrap.Modal(document.getElementById('tambahAspekModal'));
+        const errorAlert = document.getElementById('aspek-error-alert');
+
+        simpanAspekBtn.addEventListener('click', function () {
+            const namaAspek = namaAspekInput.value.trim();
+            const tahunAjaran = document.querySelector('select[name="tahun_ajaran"]').value;
+
+            if (!namaAspek) {
+                errorAlert.textContent = 'Nama aspek tidak boleh kosong.';
+                errorAlert.classList.remove('d-none');
+                return;
+            }
+            if (!tahunAjaran) {
+                errorAlert.textContent = 'Silakan pilih Tahun Ajaran terlebih dahulu.';
+                errorAlert.classList.remove('d-none');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('nama_aspek', namaAspek);
+            formData.append('tahun_ajaran', tahunAjaran);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch('{% url "tambah_aspek_ajax" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    namaAspekInput.value = '';
+                    errorAlert.classList.add('d-none');
+                    tambahAspekModal.hide();
+                    window.location.reload();
+                } else {
+                    errorAlert.textContent = data.message || 'Terjadi kesalahan.';
+                    errorAlert.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error during fetch:', error);
+                errorAlert.textContent = 'Terjadi kesalahan jaringan.';
+                errorAlert.classList.remove('d-none');
+            });
+        });
+
+        document.getElementById('tambahAspekModal').addEventListener('hidden.bs.modal', function () {
+            errorAlert.classList.add('d-none');
+            namaAspekInput.value = '';
+        });
+    }
+
+    // --- Script for Deleting Aspects ---
+    const kelolaAspekModal = document.getElementById('kelolaAspekModal');
+    if (kelolaAspekModal) {
+        const kelolaErrorAlert = document.getElementById('kelola-aspek-error');
+
+        kelolaAspekModal.addEventListener('click', function(event) {
+            if (event.target.closest('.delete-aspek-btn')) {
+                const deleteBtn = event.target.closest('.delete-aspek-btn');
+                const listItem = deleteBtn.closest('.list-group-item');
+                const aspekId = listItem.getAttribute('data-aspek-id');
+                const aspekNama = listItem.querySelector('span').previousSibling.textContent.trim();
+
+                const deleteAspekModalElement = document.getElementById('deleteAspekModal');
+                const deleteAspekModal = new bootstrap.Modal(deleteAspekModalElement);
+                const deleteAspekNama = document.getElementById('deleteAspekNama');
+                const deleteAspekForm = document.getElementById('deleteAspekForm');
+
+                deleteAspekNama.textContent = `"${aspekNama}"`;
+                
+                // Set form action
+                deleteAspekForm.action = `/laporan/hapus-aspek-ajax/${aspekId}/`;
+
+                // Hide the current modal and show the delete confirmation modal
+                const kelolaModalInstance = bootstrap.Modal.getInstance(kelolaAspekModal);
+                if (kelolaModalInstance) {
+                    kelolaModalInstance.hide();
+                }
+                deleteAspekModal.show();
+
+                // Handle form submission
+                deleteAspekForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    fetch(deleteAspekForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        deleteAspekModal.hide();
+                        if (data.status === 'success') {
+                            window.location.reload(); // The alert is removed from here
+                        } else {
+                            const kelolaErrorAlert = document.getElementById('kelola-aspek-error');
+                            kelolaErrorAlert.textContent = data.message || 'Gagal menghapus aspek.';
+                            kelolaErrorAlert.classList.remove('d-none');
+
+                            // Show the kelola modal again to display the error
+                            const kelolaModalInstance = bootstrap.Modal.getInstance(kelolaAspekModal) || new bootstrap.Modal(kelolaAspekModal);
+                            kelolaModalInstance.show();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during delete fetch:', error);
+                        const kelolaErrorAlert = document.getElementById('kelola-aspek-error');
+                        kelolaErrorAlert.textContent = 'Terjadi kesalahan jaringan.';
+                        kelolaErrorAlert.classList.remove('d-none');
+                        deleteAspekModal.hide();
+                    });
+                };
+            } else if (event.target.closest('.edit-aspek-btn')) {
+                const editBtn = event.target.closest('.edit-aspek-btn');
+                const listItem = editBtn.closest('.list-group-item');
+                const aspekId = listItem.getAttribute('data-aspek-id');
+                const aspekNama = listItem.querySelector('span').previousSibling.textContent.trim();
+
+                // Populate edit modal
+                document.getElementById('editAspekId').value = aspekId;
+                document.getElementById('editAspekNamaInput').value = aspekNama;
+
+                // Hide kelola modal and show edit modal
+                const kelolaModalInstance = bootstrap.Modal.getInstance(kelolaAspekModal);
+                if (kelolaModalInstance) {
+                    kelolaModalInstance.hide();
+                }
+                const editAspekModal = new bootstrap.Modal(document.getElementById('editAspekModal'));
+                editAspekModal.show();
+            }
+        });
+
+        kelolaAspekModal.addEventListener('hidden.bs.modal', function () {
+            kelolaErrorAlert.classList.add('d-none');
+        });
+    }
+
+    // --- Script for Editing Aspects ---
+    const updateAspekBtn = document.getElementById('updateAspekBtn');
+    if (updateAspekBtn) {
+        const editAspekNamaInput = document.getElementById('editAspekNamaInput');
+        const editAspekIdInput = document.getElementById('editAspekId');
+        const editAspekModal = new bootstrap.Modal(document.getElementById('editAspekModal'));
+        const editErrorAlert = document.getElementById('edit-aspek-error');
+
+        updateAspekBtn.addEventListener('click', function() {
+            const aspekId = editAspekIdInput.value;
+            const newNama = editAspekNamaInput.value.trim();
+            const tahunAjaran = document.querySelector('select[name="tahun_ajaran"]').value;
+
+            if (!newNama) {
+                editErrorAlert.textContent = 'Nama aspek tidak boleh kosong.';
+                editErrorAlert.classList.remove('d-none');
+                return;
+            }
+            if (!tahunAjaran) {
+                editErrorAlert.textContent = 'Tidak dapat menemukan tahun ajaran yang dipilih.';
+                editErrorAlert.classList.remove('d-none');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('nama_aspek', newNama);
+            formData.append('tahun_ajaran', tahunAjaran);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch(`/laporan/edit-aspek-ajax/${aspekId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update the name in the Kelola Aspek modal list
+                    const listItem = document.querySelector(`#aspek-list-management li[data-aspek-id="${aspekId}"]`);
+                    if (listItem) {
+                        // Assuming the structure is: textNode + span (buttons)
+                        const textNode = listItem.firstChild;
+                        if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                            textNode.textContent = data.aspek.nama_aspek + ' '; // Update text content
+                        } else {
+                            // Fallback if structure is different, e.g., if name is wrapped in a span
+                            listItem.querySelector('span').previousSibling.textContent = data.aspek.nama_aspek;
+                        }
+                    }
+                    editErrorAlert.classList.add('d-none');
+                    editAspekModal.hide();
+                    alert('Aspek berhasil diperbarui!');
+                    window.location.reload(); // Refresh to update forms
+                } else {
+                    editErrorAlert.textContent = data.message || 'Terjadi kesalahan.';
+                    editErrorAlert.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error during edit fetch:', error);
+                editErrorAlert.textContent = 'Terjadi kesalahan jaringan.';
+                editErrorAlert.classList.remove('d-none');
+            });
+        });
+
+        document.getElementById('editAspekModal').addEventListener('hidden.bs.modal', function () {
+            editErrorAlert.classList.add('d-none');
+        });
+    }
+});
+</script>
+{% endif %}
+
+{% endblock %}

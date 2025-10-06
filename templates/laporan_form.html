@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Isi Laporan Perkembangan{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+
+<!-- ================= Wrapper Utama ================= -->
+<div style="background-color: white;padding: 1.5rem;border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);margin-top: -4rem;
+            max-width: 950px;margin-left: auto;margin-right: auto;position: relative;z-index: 1;" 
+     class="form-wrapper">
+
+    <h5 class="fw-bold mb-3">
+        {% if laporan %}
+            Edit Laporan Perkembangan Siswa - {{ laporan.siswa.nama }}
+        {% elif siswa %}
+            Isi Laporan Perkembangan Siswa - {{ siswa.nama }}
+        {% else %}
+            Laporan Perkembangan Siswa
+        {% endif %}
+    </h5>
+
+    <form method="POST" enctype="multipart/form-data" data-siswa-nama="{{ siswa.nama }}">
+        {% csrf_token %}
+
+        <!-- Tabel Penilaian -->
+        <table class="table table-bordered align-middle">
+            <thead class="table-light text-center">
+                <tr>
+                    <th>No</th>
+                    <th>Aspek Penilaian</th>
+                    <th>Foto Kegiatan</th>
+                    <th>Deskripsi</th>
+                </tr>
+            </thead>
+            <tbody id="aspek-table-body">
+                {% for aspek_item in aspek_list %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>
+                        {% if laporan %}
+                            {{ aspek_item.aspek.nama_aspek }}
+                        {% else %}
+                            {{ aspek_item.nama_aspek }}
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if aspek_item.foto and aspek_item.foto.url %}
+                            <img src="{{ aspek_item.foto.url }}" width="100" class="mb-1 rounded"><br>
+                        {% endif %}
+                        <input type="file" name="foto_{{ aspek_item.aspek.id|default:aspek_item.id }}" class="form-control form-control-sm">
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <textarea name="deskripsi_{{ aspek_item.aspek.id|default:aspek_item.id }}" rows="2" class="form-control form-control-sm">{{ aspek_item.deskripsi|default:"" }}</textarea>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary btn-sm generate-deskripsi-btn" type="button" title="Generate (Sudah Mampu)" data-template="Ananda {nama} sudah mampu {keyword} dengan baik.">
+                                    <i class='bx bx-bot'></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="visually-hidden">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><h6 class="dropdown-header">Positif / Sudah Menguasai</h6></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} sudah mampu {keyword} dengan baik.">Sudah Mampu</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} sudah terbiasa untuk {keyword}.">Sudah Terbiasa</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} menunjukkan kemajuan yang baik dalam {keyword}.">Menunjukkan Kemajuan Baik</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} konsisten dalam {keyword}.">Konsisten Dalam</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} memiliki kepercayaan diri dalam {keyword}.">Memiliki Kepercayaan Diri</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} terampil dalam {keyword}.">Terampil Dalam</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} dapat mengekspresikan {keyword}.">Dapat Mengekspresikan</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} menunjukkan kemandirian dalam {keyword}.">Menunjukkan Kemandirian</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">Sedang Berkembang</h6></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} menunjukkan perkembangan yang baik dalam {keyword}.">Berkembang Baik</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} mulai memahami {keyword}.">Mulai Memahami</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} mulai menunjukkan kemampuan dalam {keyword}.">Mulai Menunjukkan Kemampuan</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} sudah mencoba untuk {keyword}.">Sudah Mencoba</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} mulai berinisiatif untuk {keyword}.">Mulai Berinisiatif</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} berusaha untuk {keyword}.">Berusaha Untuk</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} perlahan menunjukkan kemampuan dalam {keyword}.">Perlahan Menunjukkan Kemampuan</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">Perlu Bimbingan / Latihan</h6></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} masih memerlukan bimbingan dalam {keyword}.">Perlu Bimbingan</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} masih perlu latihan dalam {keyword}.">Perlu Latihan</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} masih perlu diarahkan untuk {keyword}.">Perlu Diarahkan</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} kadang masih ragu dalam {keyword}.">Kadang Masih Ragu</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} sering membutuhkan bimbingan dalam {keyword}.">Sering Butuh Bimbingan</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} perlu dibantu untuk {keyword}.">Perlu Dibantu</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} masih kesulitan dalam {keyword}.">Masih Kesulitan</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} memerlukan dorongan lebih untuk {keyword}.">Memerlukan Dorongan</a></li>
+                                    <li><a class="dropdown-item generate-deskripsi-item" href="#" data-template="Ananda {nama} perlu konsistensi dalam latihan {keyword}.">Perlu Konsistensi Latihan</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary">
+            {% if laporan %}Update Laporan{% else %}Simpan Laporan{% endif %}
+        </button>
+        <a href="{% url 'laporan_perkembangan' %}" class="btn btn-secondary">Batal</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const aspekTableBody = document.getElementById('aspek-table-body');
+    const mainForm = document.querySelector('form[data-siswa-nama]');
+    const siswaNama = mainForm ? mainForm.dataset.siswaNama : '';
+
+    if (aspekTableBody && siswaNama) {
+        aspekTableBody.addEventListener('click', function(event) {
+            const clickedElement = event.target.closest('.generate-deskripsi-btn, .generate-deskripsi-item');
+
+            if (clickedElement) {
+                event.preventDefault(); // Stop link from navigating
+
+                const template = clickedElement.dataset.template;
+                const inputGroup = clickedElement.closest('.input-group');
+                const textarea = inputGroup.querySelector('textarea');
+
+                if (template && textarea) {
+                    const selectionStart = textarea.selectionStart;
+                    const selectionEnd = textarea.selectionEnd;
+                    const keyword = textarea.value.substring(selectionStart, selectionEnd).trim();
+
+                    if (keyword) {
+                        let generatedText = template.replace('{nama}', siswaNama);
+                        generatedText = generatedText.replace('{keyword}', keyword);
+                        
+                        // Replace only the selected text
+                        const fullText = textarea.value;
+                        textarea.value = fullText.substring(0, selectionStart) + generatedText + fullText.substring(selectionEnd);
+
+                    } else {
+                        alert('Silakan sorot (highlight) kata kunci di dalam kotak deskripsi terlebih dahulu.');
+                    }
+                }
+            }
+        });
+    }
+
+    function sortTable() {
+        if (!aspekTableBody) return;
+        const rows = Array.from(aspekTableBody.getElementsByTagName('tr'));
+
+        rows.sort(function (a, b) {
+            const nameA = a.cells[1] ? a.cells[1].textContent.trim().toLowerCase() : '';
+            const nameB = b.cells[1] ? b.cells[1].textContent.trim().toLowerCase() : '';
+            if (nameA < nameB) return -1;
+            if (nameA > nameB) return 1;
+            return 0;
+        });
+
+        rows.forEach(function(row, index) {
+            if(row.cells[0]) {
+                row.cells[0].textContent = index + 1;
+            }
+            aspekTableBody.appendChild(row);
+        });
+    }
+
+    // Initial sort on page load
+    sortTable();
+});
+</script>
+{% endblock %}

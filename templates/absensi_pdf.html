@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ judul }}</title>
+    <style>
+        @page { size: A4 landscape; margin: 20mm; }
+        body { font-family: Arial, sans-serif; font-size: 11px; }
+        h2 { text-align: center; margin-bottom: 40px; }
+        p { text-align: left; margin-top: 0; margin-bottom: 10px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #000; padding: 4px; text-align: center; font-size: 10px; }
+        th { background-color: #f2f2f2; }
+
+        .rekap {
+            margin-top: 15px;
+            width: 40%;
+            float: right;
+            border-collapse: collapse;
+        }
+        .rekap th, .rekap td {
+            border: 1px solid #000;
+            padding: 4px;
+        }
+
+        .tanda_tangan {
+            clear: both;
+            margin-top: 60px;
+            width: 100%;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <h2>{{ judul }}</h2> 
+    <p style="font-weight: bold;">Bulan: {{ bulan_nama }}</p>
+    {% if kelas_terpilih %}
+    <p style="font-weight: bold;">Kelas: {{ kelas_terpilih.nama }}</p>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Nomor Induk</th>
+                {% for day_info in tanggal_info %}
+                <th {% if day_info.is_weekend %}style="background-color: #ffcccc;"{% endif %}>{{ day_info.day }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in siswa_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td style="text-align:left; width: 200px;">{{ row.siswa.nama }}</td>
+                <td style="width: 50px;">{{ row.siswa.nomor_induk }}</td>
+                {% for day_status in row.daily_status_info %}
+                <td {% if day_status.is_weekend %}style="background-color: #ffcccc;"{% endif %}>
+                    {% if day_status.status == 'Hadir' %}H
+                    {% elif day_status.status == 'Sakit' %}S
+                    {% elif day_status.status == 'Izin' %}I
+                    {% elif day_status.status == 'Alpa' %}A
+                    {% else %}-{% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+<br> <br>
+    <table class="rekap" style="margin-top: 20px; width: 50%; float: left;">
+        <thead>
+            <tr>
+                <th colspan="2">Rekapitulasi Persentase Kehadiran</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="text-align: left;">Sakit</td>
+                <td style="text-align: right;">{{ persentase_sakit|floatformat:2 }}%</td>
+            </tr>
+            <tr>
+                <td style="text-align: left;">Izin</td>
+                <td style="text-align: right;">{{ persentase_izin|floatformat:2 }}%</td>
+            </tr>
+            <tr>
+                <td style="text-align: left;">Tanpa Keterangan</td>
+                <td style="text-align: right;">{{ persentase_alpa|floatformat:2 }}%</td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if wali_kelas %}
+    <table style="width: 100%; border: 0; page-break-inside: avoid; margin-top: 140px;">
+        <tbody>
+            <tr style="border: 0;">
+                <td style="width: 50%; text-align: center; border: 0;">
+                    <p style="text-align: center; margin-bottom: 0; line-height: 1;">Mengetahui,</p>
+                    <p style="text-align: center; line-height: 1;">Kepala TK Negeri 7 Tanjungpinang</p>
+                    <div style="height: 60px;"></div>
+                    <p style="text-align: center; font-weight: bold; margin-bottom: 0; line-height: 1;">
+                        {{ kepala_sekolah.nama|title }}
+                    </p>
+                    <p style="text-align: center; line-height: 1.5;">NIP. {{ kepala_sekolah.nip }}</p>
+                </td>
+                <td style="width: 50%; text-align: center; border: 0;">
+                    <p style="text-align: center; margin-bottom: 0; line-height: 1;">Wali Kelas,</p>
+                    <div style="height: 60px;"></div>
+                    <p style="text-align: center; font-weight: bold; margin-bottom: 0; line-height: 1;">
+                        {{ wali_kelas.nama|title }}
+                    
+                    <p style="text-align: center; line-height: 1.5;">NIP. {{ wali_kelas.nip }}</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    {% else %}
+    <table style="width: 30%; float: right; border: 0; page-break-inside: avoid; margin-left: auto; margin-top: 20px;">
+        <tbody>
+            <tr style="border: 0;">
+                <td style="width: 100%; text-align: center; border: 0;">
+                    <p style="margin-bottom: 0; line-height: 1;">Mengetahui,</p>
+                    <p style="line-height: 1;">Kepala TK Negeri 7 Tanjungpinang</p>
+                    <div style="height: 60px;"></div>
+                    <p style="font-weight: bold; margin-bottom: 0; line-height: 1;">
+                        {{ kepala_sekolah.nama|title }}
+                    </p>
+                    <p style="line-height: 1.5;">NIP. {{ kepala_sekolah.nip }}</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    {% endif %}
+
+</body>
+</html>

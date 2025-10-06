@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login SIAKAD TK Negeri 7</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            height: 100%;
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navbar styling */
+        nav {
+            background-color: white;
+            color: #007bff;
+            padding: 15px 30px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+        }
+
+        /* Container untuk form, full height & flex center */
+        .container {
+            flex: 1 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Card form */
+        .login-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgb(0 0 0 / 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-card h1 {
+            margin-bottom: 25px;
+            font-weight: 700;
+            color: #007bff;
+            text-align: center;
+        }
+
+        /* Form elements */
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 20px;
+            border: 1.8px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        /* Messages */
+        ul.messages {
+            list-style: none;
+            margin-bottom: 20px;
+            padding-left: 0;
+        }
+
+        ul.messages li {
+            background-color: #ffe0e0;
+            border: 1px solid #ff6b6b;
+            color: #d8000c;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        footer {
+            flex-shrink: 0;
+            background-color: white;
+            color: #007bff;
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 -2px 4px rgb(0 0 0 / 0.1);
+        }
+
+        @media (max-width: 450px) {
+            .login-card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<nav style="
+    background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+    color: white;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;">
+    <!-- Kiri: Nama Sekolah -->
+    <div>TK Negeri 7 Tanjungpinang</div>
+</nav>
+
+    <div class="container">
+        <div class="login-card">
+            <h1 style="color: #9b9a9a;">LOGIN</h1>
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            <form method="POST" novalidate autocomplete="off">
+                {% csrf_token %}
+
+                <!-- Label Username -->
+                <label for="username"
+                    style="font-weight:400; margin-bottom:6px; display:block; color:#9b9a9a;">Username</label>
+                <input id="username" type="text" name="username" autofocus autocomplete="off"
+                    style="width:100%; padding:10px 12px; margin-bottom:20px; border:1.5px solid #ccc; border-radius:6px; font-size:1rem; transition:border-color 0.3s ease;">
+
+                <!-- Label Password -->
+                <label for="password"
+                    style="font-weight:400; margin-bottom:6px; display:block; color:#9b9a9a;">Password</label>
+                <input id="password" type="password" name="password" required autocomplete="new-password"
+                    style="width:100%; padding:10px 12px; margin-bottom:20px; border:1.5px solid #ccc; border-radius:6px; font-size:1rem; transition:border-color 0.3s ease;">
+
+                <!-- Button Login -->
+                <button type="submit"
+                    style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <footer style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+               color: white; text-align:center; padding:12px;">
+        &copy; 2025 TK Negeri 7 Tanjungpinang
+    </footer>
+</body>
+
+</html>

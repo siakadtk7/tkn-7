@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Biodata {{ siswa.nama }}{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        font-family: 'poppins', sans-serif;
+        margin: 0; /* hilangin margin biar gak bikin scrollbar */
+        padding: 0;
+        background-color: #f5f7fa;
+    }
+    h2 {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+    td {
+        padding: 0.8rem; /* jarak antar baris diperbesar */
+        vertical-align: top;
+    }
+    .label {
+        width: 30%;
+        font-weight: bold;
+    }
+    .ttd-container {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        margin-top: 3rem;
+    }
+    .foto-siswa {
+        width: 120px;
+        height: 150px;
+        object-fit: cover;
+        border: 1px solid #000;
+        margin-right: 1rem;
+        margin-left: 1rem;
+        margin-top: 1rem;
+    }
+    .ttd-text {
+        text-align: center;
+    }
+</style>
+
+<!-- ================= Wrapper Utama ================= -->
+<div style="background-color: white; padding: 1.5rem; border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05); margin-top: -4rem;
+            max-width: 900px; margin-left: auto; margin-right: auto;">
+ 
+    <div style="position: relative; text-align: center;">
+        <h2 class="fw-bold mb-0">DATA DIRI ANAK</h2>
+
+        {% if request.user.profile.role == 'admin' or request.user.profile.role == 'guru' %}
+            <a href="{% url 'biodata_pdf' siswa.id %}" 
+            style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); 
+                    color:#a0a0a0; font-size:1.5rem; text-decoration:none; transition: color 0.3s;" 
+            onmouseover="this.style.color='#606060'" 
+            onmouseout="this.style.color='#a0a0a0'">
+            <i class="bi bi-printer"></i>
+            </a>
+        {% endif %}
+    </div>
+
+    <table style="margin-top: 50px;">
+        <tr>
+            <td class="label">Nama</td>
+            <td>: {{ siswa.nama }}</td>
+        </tr>
+        <tr>
+            <td class="label">Nomor Induk</td>
+            <td>: {{ siswa.nomor_induk }}</td>
+        </tr>
+        <tr>
+            <td class="label">NISN</td>
+            <td>: {{ siswa.nisn }}</td>
+        </tr>
+        <tr>
+            <td class="label">Jenis Kelamin</td>
+            <td>: {{ siswa.get_jenis_kelamin_display }}</td>
+        </tr>
+        <tr>
+            <td class="label">Tempat, Tanggal Lahir</td>
+            <td>: {{ siswa.tempat_lahir }}, {{ siswa.tanggal_lahir }}</td>
+        </tr>
+        <tr>
+            <td class="label">Agama</td>
+            <td>: {{ siswa.agama }}</td>
+        </tr>
+        <tr>
+            <td class="label">Nama Ayah</td>
+            <td>: {{ siswa.nama_ayah }}</td>
+        </tr>
+        <tr>
+            <td class="label">Nama Ibu</td>
+            <td>: {{ siswa.nama_ibu }}</td>
+        </tr>
+        <tr>
+            <td class="label">Alamat</td>
+            <td>: {{ siswa.alamat }}</td>
+        </tr>
+        <tr>
+            <td class="label">No. HP</td>
+            <td>: {{ siswa.no_hp }}</td>
+        </tr>
+    </table>
+
+    <div  class="ttd-container">
+        {% if siswa.foto %}
+            <img src="{{ siswa.foto.url }}" alt="Foto {{ siswa.nama }}" style="margin-right: 30px;" class="foto-siswa">
+        {% else %}
+            <div class="foto-siswa"></div>
+        {% endif %}
+        
+    <div class="ttd-text" style="text-align: center; margin-right: 30px; line-height: 1;">
+            Kepala TK Negeri 7 <br>
+            Tanjungpinang, <br><br><br><br><br><br><br>
+            <strong>{{ kepala.nama|title }}</strong> <br>
+            NIP: {{ kepala.nip }}
+        </div>
+    </div>
+</div>
+{% endblock %}

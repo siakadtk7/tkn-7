@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Kelola User{% endblock %}
+
+{% block content %}
+<div class="form-wrapper"
+     style="background-color: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            margin-top: -4rem; max-width: 950px; margin-left: auto; margin-right: auto; position: relative;"> {# Hapus z-index: 1; #}
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+           <h5 class="fw-bold">Daftar User</h5>
+            <!-- Tombol ikon "Tambah User Baru" -->
+            <button type="button" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center"
+                    style="width: 60px; height: 40px;"
+                    data-bs-toggle="modal" data-bs-target="#addUserModal" title="Tambah User Baru">
+                <i class="bx bx-user-plus fs-4"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_obj in users %}
+                        <tr>
+                            <td>{{ user_obj.username }}</td>
+                            <td>{{ user_obj.profile.role }}</td>
+                            <td>
+                                <a href="{% url 'user_edit' user_obj.id %}" class="btn btn-sm btn-warning">Edit</a>
+                                <button type="button" class="btn btn-sm btn-danger delete-user-btn" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-user-id="{{ user_obj.id }}" data-username="{{ user_obj.username }}">Hapus</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Guru Tanpa Akun User</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nama Guru</th>
+                            <th>Jabatan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for guru in gurus_without_user %}
+                        <tr>
+                            <td>{{ guru.nama }}</td>
+                            <td>{{ guru.jabatan }}</td>
+                            <td>
+                                <a href="{% url 'create_user_for_guru' guru.id %}" class="btn btn-sm btn-success">Buat Akun</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3">Semua guru sudah memiliki akun user.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div> {# Penutup form-wrapper #}
+
+{# Modal Tambah User Baru dipindahkan ke sini #}
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%); color: #fff;">
+                <h5 class="modal-title" id="addUserModalLabel">Tambah User Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ form.username|as_crispy_field }}
+                    {{ form.password1|as_crispy_field }}
+                    {{ form.password2|as_crispy_field }}
+                    
+                    <div class="mb-3">
+                        <label for="id_guru" class="form-label">Pilih Guru (Opsional)</label>
+                        <select name="guru_id" id="id_guru" class="form-select">
+                            <option value="">---------</option>
+                            {% for guru in gurus_without_user %}
+                                <option value="{{ guru.id }}">{{ guru.nama }} ({{ guru.jabatan }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Pilih guru yang akan dikaitkan dengan akun ini.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Buat User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# Modal Konfirmasi Hapus User dipindahkan ke sini #}
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Konfirmasi Hapus User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus user <strong id="modalUsername"></strong>?</p>
+                <p class="text-danger">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteUserForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var deleteUserModal = document.getElementById('deleteUserModal');
+        deleteUserModal.addEventListener('show.bs.modal', function (event) {
+            // Tombol yang memicu modal
+            var button = event.relatedTarget;
+            // Ekstrak info dari atribut data-bs-*
+            var userId = button.getAttribute('data-user-id');
+            var username = button.getAttribute('data-username');
+
+            // Update konten modal
+            var modalUsername = deleteUserModal.querySelector('#modalUsername');
+            modalUsername.textContent = username;
+
+            // Update action form hapus
+            var deleteForm = deleteUserModal.querySelector('#deleteUserForm');
+            deleteForm.action = `/manage-users/delete/${userId}/`; // Sesuaikan dengan URL Anda
+        });
+    });
+</script>
+{% endblock extra_js %}
+{% endblock content %}
