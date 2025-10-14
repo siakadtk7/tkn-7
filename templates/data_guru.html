@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Guru{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+
+<style>
+  body { 
+    font-family: 'poppins', sans-serif; 
+  }
+  .table-custom-header th {
+    background-color: rgb(252, 244, 244) !important;
+    color: #333 !important;
+    box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2) !important;
+    vertical-align: middle !important;
+  }
+  .modal { z-index: 2000; }
+  .modal-backdrop { z-index: 1500; }
+  .btn-close { box-shadow: none !important; border: none !important; outline: none !important; }
+  .btn-close:hover, .btn-close:focus { background-color: transparent !important; box-shadow: none !important; border: none !important; outline: none !important; }
+  .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  #deleteModal .modal-dialog {
+    max-width: 510px; /* kecilin ukuran lebar */
+  }
+  .table td, .table th {
+      text-align: center;
+      vertical-align: middle;
+  }
+  .btn-action-icon {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+  }
+</style>
+
+<!-- =================== WRAPPER UTAMA =================== -->
+<div class="form-wrapper"
+     style="background-color: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            margin-top: -4rem; max-width: 950px; margin-left: auto; margin-right: auto; position: relative; z-index: 1;">
+   
+  <!-- =================== HEADER & TOMBOL TAMBAH =================== -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold">Daftar Guru</h5>
+      {% if request.user.profile.role == 'admin' %}
+      <button type="button" id="tambahGuruBtn" 
+              class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center" 
+              style="width: 60px; height: 40px;" 
+              data-bs-toggle="modal" data-bs-target="#guruModal">
+          <i class="bx bx-user-plus fs-4"></i>
+      </button>
+      {% endif %}
+  </div>
+
+  <!-- =================== TABLE DATA GURU =================== -->
+  <div class="card-body table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+          <thead class="table-custom-header">
+              <tr>
+                  <th>No.</th>
+                  <th>Foto</th>
+                  <th>NIP</th>
+                  <th style="width: 10%; min-width: 170px;">Nama</th>
+                  <th>Jabatan</th>
+                  <th>Tempat, Tanggal Lahir</th>
+                  <th>Tanggal Bergabung</th>
+                  <th style="min-width: 150px;">Alamat</th>
+                  {% if request.user.profile.role == 'admin' %}
+                  <th>Edit</th>
+                  <th>Hapus</th>
+                  {% endif %}
+              </tr>
+          </thead>
+
+          <tbody>
+              {% for guru in guru_page %}
+              <tr>
+                  <td>{{ forloop.counter0|add:guru_page.start_index }}</td>
+                  <td>
+                      {% if guru.foto %}
+                          <img src="{{ guru.foto.url }}" alt="{{ guru.nama }}" width="50" height="50" style="object-fit: cover;">
+                      {% else %}
+                          <i class="bx bx-user-circle" style="font-size: 2rem;"></i>
+                      {% endif %}
+                  </td>
+                  <td>{{ guru.nip|default_if_none:"" }}</td>
+                  <td style="width: 20%;">{{ guru.nama|title }}</td>
+                  <td>{{ guru.get_jabatan_display|title }}</td>
+                  <td>{{ guru.tempat_lahir|title }}<br>{{ guru.tanggal_lahir|date:"d M Y" }}</td>
+                  <td>{{ guru.tanggal_masuk|date:"d M Y" }}</td>
+                  <td>{{ guru.alamat|title }}</td>
+                  
+                  {% if request.user.profile.role == 'admin' %}
+                  <!-- Tombol Edit -->
+                  <td style="white-space: nowrap;">
+                      <button class="btn btn-sm btn-warning editBtn btn-action-icon"
+                              data-id="{{ guru.id }}"
+                              data-nip="{{ guru.nip|default_if_none:"" }}"
+                              data-nama="{{ guru.nama }}"
+                              data-jabatan="{{ guru.jabatan }}"
+                              data-tempat="{{ guru.tempat_lahir }}"
+                              data-tanggal="{{ guru.tanggal_lahir|date:"Y-m-d" }}"
+                              data-masuk="{{ guru.tanggal_masuk|date:"Y-m-d" }}"
+                              data-alamat="{{ guru.alamat }}"
+                              title="Edit">
+                          <i class="bx bx-edit"></i>
+                      </button>
+                  </td>
+
+                  <!-- Tombol Hapus -->
+                  <td>
+                      <button type="button" class="btn btn-danger btn-sm btn-action-icon"
+                              data-bs-toggle="modal"
+                              data-bs-target="#deleteModal"
+                              data-url="{% url 'hapus_guru' guru.id %}"
+                              data-nama="{{ guru.nama }}">
+                          <i class="bx bx-trash"></i>
+                      </button>
+                  </td>
+                  {% endif %}
+              </tr>
+              {% empty %}
+              <tr>
+                  <td colspan="{% if request.user.profile.role == 'admin' %}10{% else %}8{% endif %}" class="text-center">Data guru belum tersedia.</td>
+              </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+  </div>
+
+  <!-- =================== PAGINATION =================== -->
+  {% if guru_page.paginator.num_pages > 1 %}
+  <nav aria-label="Page navigation" class="mt-4">
+      <ul class="pagination justify-content-center">
+          {% if guru_page.has_previous %}
+              <li class="page-item"><a class="page-link" href="?page=1&{{ request.GET.urlencode|cut:'page' }}">&laquo;&laquo;</a></li>
+              <li class="page-item"><a class="page-link" href="?page={{ guru_page.previous_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&laquo;</a></li>
+          {% else %}
+              <li class="page-item disabled"><a class="page-link">&laquo;&laquo;</a></li>
+              <li class="page-item disabled"><a class="page-link">&laquo;</a></li>
+          {% endif %}
+
+          {% for i in guru_page.paginator.page_range %}
+              {% if guru_page.number == i %}
+                  <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+              {% elif i > guru_page.number|add:'-3' and i < guru_page.number|add:'3' %}
+                  <li class="page-item"><a class="page-link" href="?page={{ i }}&{{ request.GET.urlencode|cut:'page' }}">{{ i }}</a></li>
+              {% endif %}
+          {% endfor %}
+
+          {% if guru_page.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{ guru_page.next_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;</a></li>
+              <li class="page-item"><a class="page-link" href="?page={{ guru_page.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;&raquo;</a></li>
+          {% else %}
+              <li class="page-item disabled"><a class="page-link">&raquo;</a></li>
+              <li class="page-item disabled"><a class="page-link">&raquo;&raquo;</a></li>
+          {% endif %}
+      </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<!-- =================== MODAL TAMBAH / EDIT GURU =================== -->
+<div class="modal fade" id="guruModal" tabindex="-1" aria-labelledby="guruLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="POST" id="guruForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Header -->
+        <div class="modal-header" style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%); color: #fff;">
+          <h5 class="modal-title" id="guruLabel">Tambah Data Guru</h5>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+          <div class="container-fluid">
+            <!-- Row 1 -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label>NIP</label>
+                <input type="text" name="nip" id="guruNIP" class="form-control" oninput="this.value = this.value.replace(/\D/g, '')">
+                <div id="nip-error" class="form-text text-danger mt-1"></div>
+              </div>
+              <div class="col-md-6">
+                <label>Nama</label>
+                <input type="text" name="nama" id="guruNama" class="form-control capitalize" required>
+              </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label>Jabatan</label>
+                <select name="jabatan" id="guruJabatan" class="form-control" required>
+                  <option value="">--Pilih Jabatan--</option>
+                  {% for value, display in jabatan_choices %}
+                    <option value="{{ value }}">{{ display }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label>Tempat Lahir</label>
+                <input type="text" name="tempat_lahir" id="guruTempat" class="form-control capitalize" required>
+              </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label>Tanggal Lahir</label>
+                <input type="date" name="tanggal_lahir" id="guruTanggal" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label>Tanggal Bergabung</label>
+                <input type="date" name="tanggal_masuk" id="guruMasuk" class="form-control" required>
+              </div>
+            </div>
+
+            <!-- Row 4 -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label>Foto</label>
+                <input type="file" name="foto" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label>Alamat</label>
+                <textarea name="alamat" id="guruAlamat" class="form-control capitalize" rows="3" required></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" id="guruSubmitBtn">Simpan</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- =================== MODAL KONFIRMASI HAPUS =================== -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+        <h5 class="modal-title fw-bold">Konfirmasi Hapus</h5>
+      </div>
+      <div class="modal-body">
+        <p>Apakah Anda yakin ingin menghapus guru <b id="guruNamaDelete"></b>?</p>
+      </div>
+      <div class="modal-footer">
+        <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Hapus</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== STYLE TAMBAHAN =================== -->
+<style>
+.capitalize { text-transform: capitalize; }
+.modal-body .form-control, .modal-body select, .modal-body textarea { margin-top: 8px; }
+.modal-dialog { max-width: 800px; }
+.modal-body { max-height: 70vh; overflow-y: auto; padding-right: 15px; }
+</style>
+
+<!-- =================== SCRIPT FUNCTION =================== -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const guruModal = new bootstrap.Modal(document.getElementById('guruModal'));
+    const guruForm = document.getElementById('guruForm');
+    const guruLabel = document.getElementById('guruLabel');
+    const guruSubmitBtn = document.getElementById('guruSubmitBtn');
+    const nipInput = document.getElementById('guruNIP');
+    const nipError = document.getElementById('nip-error');
+    
+    // --- Data untuk validasi ---
+    const existingNips = JSON.parse('{{ existing_nips_json|escapejs }}');
+    let originalNip = '';
+
+    // --- Tombol Tambah Guru ---
+    document.getElementById('tambahGuruBtn').addEventListener('click', () => {
+        originalNip = '';
+        guruLabel.textContent = 'Tambah Guru';
+        guruForm.action = "{% url 'data_guru' %}";
+        guruSubmitBtn.textContent = 'Simpan';
+        guruSubmitBtn.disabled = false;
+        guruForm.reset();
+        nipError.textContent = '';
+    });
+
+    // --- Tombol Edit Guru ---
+    document.querySelector('table').addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.editBtn');
+        if (editBtn) {
+            originalNip = editBtn.dataset.nip;
+            guruLabel.textContent = 'Edit Guru';
+            guruForm.action = `/data-guru/?edit_id=${editBtn.dataset.id}`;
+            guruSubmitBtn.textContent = 'Update';
+            guruSubmitBtn.disabled = false;
+            nipError.textContent = '';
+
+            // Isi form
+            document.getElementById('guruNIP').value = editBtn.dataset.nip;
+            document.getElementById('guruNama').value = editBtn.dataset.nama;
+            document.getElementById('guruJabatan').value = editBtn.dataset.jabatan;
+            document.getElementById('guruTempat').value = editBtn.dataset.tempat;
+            document.getElementById('guruTanggal').value = editBtn.dataset.tanggal;
+            document.getElementById('guruMasuk').value = editBtn.dataset.masuk;
+            document.getElementById('guruAlamat').value = editBtn.dataset.alamat;
+
+            guruModal.show();
+        }
+    });
+
+    // --- Validasi Input NIP ---
+    nipInput.addEventListener('input', function() {
+        const currentNip = this.value;
+        if (existingNips.includes(currentNip) && currentNip !== originalNip) {
+            nipError.textContent = 'NIP sudah digunakan.';
+            guruSubmitBtn.disabled = true;
+        } else {
+            nipError.textContent = '';
+            guruSubmitBtn.disabled = false;
+        }
+    });
+
+
+
+    // --- Kapitalisasi Otomatis ---
+    function capitalizeEachWord(str) {
+        return str.replace(/\b\w/g, function(l){ return l.toUpperCase() });
+    }
+
+    ['guruNama', 'guruTempat', 'guruAlamat'].forEach(id => {
+        const input = document.getElementById(id);
+        if(input){
+            input.addEventListener('input', function(){
+                this.value = capitalizeEachWord(this.value);
+            });
+        }
+    });
+});
+
+// --- Modal Konfirmasi Hapus ---
+document.addEventListener('DOMContentLoaded', function () {
+  const deleteModal = document.getElementById('deleteModal');
+  const guruNamaDelete = document.getElementById('guruNamaDelete');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+  deleteModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    guruNamaDelete.textContent = button.getAttribute('data-nama');
+    confirmDeleteBtn.setAttribute('href', button.getAttribute('data-url'));
+  });
+});
+</script>
+
+{% endblock %}

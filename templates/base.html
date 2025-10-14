@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}SIAKAD{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Bootstrap Icons & Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Boxicons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Bootstrap Datepicker -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ===== Navbar Custom ===== */
+        .navbar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 55px;
+            background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+            color: white;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1100;
+        }
+
+        /* ===== Sidebar ===== */
+        .sidebar {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 250px;
+            height: calc(100vh - 60px);
+            background: #f8f9fa;
+            color: #000;
+            padding-top: 20px;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            z-index: 1050;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            color: #000;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            border-radius: 0 4px 4px 0;
+            gap: 10px;
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+        .sidebar a.active {
+            background: #e8f2fa;
+            color: black;
+            border-left: 3px solid #0a58ca;
+        }
+        .sidebar a i {
+            font-size: 1.2rem;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* ===== Content Wrapper ===== */
+        .content-wrapper {
+            margin-top: 60px;
+            margin-left: 260px;
+            padding: 20px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== Logout Button ===== */
+        .logout-btn i {
+            font-size: 21px;
+            color: #fff;
+        }
+
+        /* ===== Print Styles ===== */
+        @media print {
+            @page {
+                size: auto;
+                margin-top: 10px;
+                margin-right: 3mm;
+                margin-bottom: 3mm;
+                margin-left: 3mm;
+            }
+            .sidebar,
+            .navbar-custom,
+            .hero {
+                display: none;
+            }
+            .content-wrapper {
+                margin-left: 0 !important;
+                margin-top: 10px !important;
+                padding: 50px !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            body {
+                background-color: #fff !important;
+                margin: 0;
+                padding: 0;
+            }
+            #print-raport-btn {
+                display: none;
+            }
+        }
+    </style>
+
+    {% if is_pdf %}
+    <!-- ================= PDF Styles ================= -->
+    <style>
+        body {
+            background-color: #fff !important;
+        }
+        .content-wrapper {
+            height: auto !important;
+            overflow: visible !important;
+        }
+    </style>
+    <style>
+        /* Pastikan modal dan backdrop memiliki z-index yang sangat tinggi */
+        .modal-backdrop {
+            z-index: 9998 !important;
+        }
+        .modal {
+            z-index: 9999 !important;
+        }
+
+        /* Tambahkan ini untuk form-wrapper */
+        .form-wrapper {
+            z-index: 1; /* Pastikan tidak menimpa modal */
+            position: relative; /* Pastikan konteks penumpukan normal */
+        }
+    </style>
+    {% endif %}
+</head>
+
+<body>
+
+    {% if not is_pdf %}
+    <!-- ================= Sidebar Section ================= -->
+    <div class="sidebar">
+        {% if request.user.profile.role == 'admin' %}
+        <!-- ===== Menu Admin ===== -->
+        <a href="{% url 'admin_dashboard' %}"
+            class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+            <i class='bx bxs-bar-chart-alt-2'></i> Dashboard Admin
+        </a>
+        <a href="{% url 'data_siswa' %}"
+            class="{% if request.resolver_match.url_name == 'data_siswa' %}active{% endif %}">
+            <i class='bx bxs-user-detail'></i> Data Siswa
+        </a>
+        <a href="{% url 'data_guru' %}"
+            class="{% if request.resolver_match.url_name == 'data_guru' %}active{% endif %}">
+            <i class='bx bxs-user-account'></i> Data Guru
+        </a>
+        {% comment %} <a href="{% url 'manage_users' %}"
+            class="{% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}">
+            <i class='bx bxs-user-plus'></i> Kelola User
+        </a> {% endcomment %}
+        <a href="{% url 'absensi' %}" class="{% if request.resolver_match.url_name == 'absensi' %}active{% endif %}">
+            <i class='bx bxs-book-bookmark'></i> Presensi Siswa
+        </a>
+        <a href="{% url 'laporan_perkembangan' %}"
+            class="{% if request.resolver_match.url_name == 'laporan_perkembangan' %}active{% endif %}">
+            <i class='bx bxs-receipt'></i> Laporan Perkembangan
+        </a>
+        <a href="{% url 'raport_digital' %}"
+            class="{% if request.resolver_match.url_name == 'raport_digital' %}active{% endif %}">
+            <i class='bx bxs-book-reader'></i> Rapor Digital
+        </a>
+
+        {% elif request.user.profile.role == 'guru' %}
+        <!-- ===== Menu Guru ===== -->
+        <a href="{% url 'guru_dashboard' %}"
+            class="{% if request.resolver_match.url_name == 'guru_dashboard' %}active{% endif %}">
+            <i class='bx bxs-bar-chart-alt-2'></i> Dashboard Guru
+        </a>
+        <a href="{% url 'absensi' %}" class="{% if request.resolver_match.url_name == 'absensi' %}active{% endif %}">
+            <i class='bx bxs-book-bookmark'></i> Presensi Siswa
+        </a>
+        <a href="{% url 'laporan_perkembangan' %}"
+            class="{% if request.resolver_match.url_name == 'laporan_perkembangan' %}active{% endif %}">
+            <i class='bx bxs-receipt'></i> Laporan Perkembangan
+        </a>
+        <a href="{% url 'raport_digital' %}"
+            class="{% if request.resolver_match.url_name == 'raport_digital' %}active{% endif %}">
+            <i class='bx bxs-book-reader'></i> Raport Digital
+        </a>
+
+        {% elif request.user.profile.role == 'kepala' %}
+        <!-- ===== Menu Kepala Sekolah ===== -->
+        <a href="{% url 'kepala_dashboard' %}"
+            class="{% if request.resolver_match.url_name == 'kepala_dashboard' %}active{% endif %}">
+            <i class='bx bxs-bar-chart-alt-2'></i> Dashboard Kepala Sekolah
+        </a>
+        <a href="{% url 'data_siswa' %}"
+            class="{% if request.resolver_match.url_name == 'data_siswa' %}active{% endif %}">
+            <i class='bx bxs-user-detail'></i> Data Siswa
+        </a>
+        <a href="{% url 'data_guru' %}"
+            class="{% if request.resolver_match.url_name == 'data_guru' %}active{% endif %}">
+            <i class='bx bxs-user-account'></i> Data Guru
+        </a>
+        <a href="{% url 'absensi' %}" class="{% if request.resolver_match.url_name == 'absensi' %}active{% endif %}">
+            <i class='bx bxs-book-bookmark'></i> Presensi Siswa
+        </a>
+        <a href="{% url 'laporan_perkembangan' %}"
+            class="{% if request.resolver_match.url_name == 'laporan_perkembangan' %}active{% endif %}">
+            <i class='bx bxs-receipt'></i> Laporan Perkembangan
+        </a>
+        <a href="{% url 'raport_digital' %}"
+            class="{% if request.resolver_match.url_name == 'raport_digital' %}active{% endif %}">
+            <i class='bx bxs-book-reader'></i> Rapor Digital
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ================= Content Wrapper ================= -->
+    <div class="content-wrapper" {% if is_pdf %}style="margin-left: 0 !important; margin-top: 0 !important; height: auto !important; overflow: visible !important;"{% endif %}>
+
+        {% if messages %}
+        <div style="position: fixed; top: 80px; right: 20px; z-index: 1000; min-width: 250px;">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not is_pdf %}
+        <!-- ================= Hero Section ================= -->
+        <div class="mb-4">
+            <div style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+                color: #fff; padding: 3rem 1rem; text-align: center; border-radius: 10px;" class="hero">
+                <h1 style="font-size: 2rem; font-weight: 600;">TK NEGERI 7 TANJUNGPINANG</h1>
+                <p style="font-size: 1.2rem; margin-top: 10px;">{{ hari_tanggal }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not is_pdf %}
+        <!-- ================= Navbar Section ================= -->
+        <nav class="navbar-custom">
+            <h5>
+                <i class='bx bx-user-check' style="font-size: 1.5rem;"></i> Welcome,
+                {% if request.user.profile.role == 'admin' %}
+
+                {% elif request.user.profile.role == 'guru' %}
+
+                {% elif request.user.profile.role == 'kepala' %}
+
+                {% endif %}
+            </h5>
+            <a href="{% url 'logout' %}" class="logout-btn" title="Logout">
+                <i class="bx bx-log-in-circle" style="font-size: 1.5rem;"></i>
+            </a>
+        </nav>
+        {% endif %}
+
+        <!-- ================= Main Content ================= -->
+        <div class="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- ================= Scripts ================= -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous">
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

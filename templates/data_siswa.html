@@ -1,0 +1,634 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Siswa{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+
+<style>
+    body { 
+        font-family: 'poppins', sans-serif; 
+    }
+    .table-custom-header th {
+        background-color: rgb(252, 244, 244) !important;
+        color: #333 !important;
+        box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2) !important;
+        vertical-align: middle !important;
+    }
+    .modal { z-index: 2000; }
+    .modal-backdrop { z-index: 1500; }
+    .btn-close { box-shadow: none !important; border: none !important; outline: none !important; }
+    .btn-close:hover, .btn-close:focus { background-color: transparent !important; box-shadow: none !important; border: none !important; outline: none !important; }
+    .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    }
+    .form-label {
+        font-weight: bold;
+        color: #0382c7;
+    }
+    #siswaModal .form-control,
+    #siswaModal .form-select,
+    #siswaModal textarea {
+        color: #555;
+    }
+    .btn-action-icon {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+</style>
+
+<!-- ================= Wrapper Utama ================= -->
+<div style="background-color: white;padding: 1.5rem;border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);margin-top: -4rem;
+            max-width: 950px; margin-left: auto;margin-right: auto;position: relative;z-index: 10;" 
+     class="form-wrapper">
+
+    <div style="padding-bottom: 10px;">
+        <form method="GET" id="filter-form" class="d-flex flex-wrap align-items-center gap-3 mb-4" style="width: 100%;">
+
+            <div style="flex: 1; min-width: 180px;">
+                <input type="text" name="q" class="form-control" placeholder="Cari Nama, NISN..." value="{{ request.GET.q }}">
+            </div>
+
+            <!-- Filter Tahun Ajaran -->
+            <div style="flex: 1; min-width: 180px;">
+                <select name="tahun_ajaran" class="form-select">
+                    <option value="">Pilih Tahun Ajaran</option>
+                    {% for ta in tahun_ajaran_list %}
+                    <option value="{{ ta }}" {% if tahun_ajaran == ta %}selected{% endif %}>Tahun Ajaran {{ ta }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filter & Manajemen Kelas -->
+            <div style="flex: 1; min-width: 180px;">
+                <div class="input-group">
+                    <select name="kelas" class="form-select">
+                        <option value="">Pilih Kelas</option>
+                        {% for k in kelas_list %}
+                        <option value="{{ k.id }}" data-wali-id="{{ k.wali_kelas.id }}" {% if k.id|stringformat:"s" == kelas_id %}selected{% endif %}>{{ k.nama }} ({{ k.wali_kelas.nama }})</option>
+                        {% endfor %}
+                    </select>
+                    {% if request.user.profile.role == 'admin' %}
+                    <button class="btn btn-sm btn-outline-success" type="button" title="Tambah Kelas Baru" data-bs-toggle="modal" data-bs-target="#tambahKelasModal"><i class="bx bx-plus"></i></button>
+                    <button class="btn btn-sm btn-outline-warning" type="button" id="editKelasBtn" title="Edit Kelas Terpilih" {% if not kelas_terpilih %}disabled{% endif %} data-bs-toggle="modal" data-bs-target="#editKelasModal"><i class="bx bx-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" type="button" id="hapusKelasBtn" title="Hapus Kelas Terpilih" {% if not kelas_terpilih %}disabled{% endif %}><i class="bx bx-trash"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tombol Aksi Filter -->
+            <button type="submit" class="btn btn-primary shadow-sm" title="Filter" style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%); border: none;"><i class='bx bx-filter-alt'></i></button>
+            <a href="{% url 'data_siswa' %}" class="btn btn-secondary shadow-sm" style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);" title="Reset"><i class='bx bx-refresh'></i></a>
+        </form>
+    </div>
+
+    {% if kelas_id or q %}
+    <!-- Tombol Aksi Utama -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold">
+            Daftar Siswa {% if kelas_terpilih %}Kelas {{ kelas_terpilih.nama }}{% endif %}
+        </h5>
+        <div class="d-flex gap-2">
+            {% if request.user.profile.role == 'admin' %}
+            <button type="button" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center" id="tambahSiswaBtn" style="width: 60px; height: 40px;" title="Tambah Siswa" {% if not kelas_terpilih %}disabled{% endif %} data-bs-toggle="modal" data-bs-target="#siswaModal" data-action="tambah">
+                <i class="bx bx-user-plus fs-4"></i>
+            </button>
+            <a href="{% url 'download_siswa_excel' %}?kelas={{ request.GET.kelas }}" class="btn btn-success shadow-sm d-flex align-items-center justify-content-center" style="width: 60px; height: 40px;" title="Download Excel">
+                <i class="bx bx-download fs-4"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+
+    <!-- Tabel Data -->
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center table-hover">
+            <thead class="table-custom-header">
+                <tr>
+                    <th>No</th>
+                    <th>Foto</th>
+                    <th>Nama</th>
+                    <th>NISN</th>
+                    <th>Nomor Induk</th>
+                    <th>Jenis Kelamin</th>
+                    <th>Tahun Ajaran</th>
+                    <th style="min-width: 150px;">Tempat, Tanggal Lahir</th>
+                    <th>Agama</th>
+                    <th>Nama Ayah</th>
+                    <th>Nama Ibu</th>
+                    <th>Alamat</th>
+                    <th>No HP</th>
+                    {% if request.user.profile.role == 'admin' %}
+                    <th>Edit</th>
+                    <th>Hapus</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+    {% for siswa in siswa_page %}
+    <tr>
+        <td style="text-align: center;">{{ forloop.counter0|add:siswa_page.start_index }}</td>
+        <td>
+            {% if siswa.foto %}
+            <img src="{{ siswa.foto.url }}" alt="Foto {{ siswa.nama }}" style="width: 60px; height: 60px; object-fit: cover;">
+            {% else %}
+            <span class="text-muted">Tidak ada foto</span>
+            {% endif %}
+        </td>
+        <td>{{ siswa.nama }}</td>
+        <td>{{ siswa.nisn }}</td>
+        <td>{{ siswa.nomor_induk }}</td>
+        <td>{% if siswa.jenis_kelamin == 'L' %}Laki-laki{% elif siswa.jenis_kelamin == 'P' %}Perempuan{% else %}-{% endif %}</td>
+        <td>{{ siswa.tahun_ajaran }}</td>
+        <td>{{ siswa.tempat_lahir }}, {{ siswa.tanggal_lahir|date:"d M Y" }}</td>
+        <td>{{ siswa.agama }}</td>
+        <td>{{ siswa.nama_ayah }}</td>
+        <td>{{ siswa.nama_ibu }}</td>
+        <td class="text-start">{{ siswa.alamat }}</td>
+        <td>{{ siswa.no_hp }}</td>
+
+        {% if request.user.profile.role == 'admin' %}
+        <!-- Tombol Edit -->
+        <td>
+            <button type="button" class="btn btn-warning btn-sm btn-action-icon" data-bs-toggle="modal" 
+                    data-bs-target="#siswaModal" data-action="edit"
+                    data-siswa='{
+                        "id": "{{ siswa.id }}",
+                        "nama": "{{ siswa.nama|escapejs }}",
+                        "nisn": "{{ siswa.nisn|escapejs }}",
+                        "nomor_induk": "{{ siswa.nomor_induk|escapejs }}",
+                        "jenis_kelamin": "{{ siswa.jenis_kelamin|escapejs }}",
+                        "kelas_id": "{{ siswa.kelas.id|default_if_none:'' }}",
+                        "tahun_ajaran": "{{ siswa.tahun_ajaran|escapejs }}",
+                        "tempat_lahir": "{{ siswa.tempat_lahir|escapejs }}",
+                        "tanggal_lahir": "{{ siswa.tanggal_lahir|date:"Y-m-d" }}",
+                        "agama": "{{ siswa.agama|escapejs }}",
+                        "nama_ayah": "{{ siswa.nama_ayah|escapejs }}",
+                        "nama_ibu": "{{ siswa.nama_ibu|escapejs }}",
+                        "alamat": "{{ siswa.alamat|escapejs }}",
+                        "no_hp": "{{ siswa.no_hp|escapejs }}"
+                    }'>
+                <i class="bx bx-edit"></i>
+            </button>
+        </td>
+        <!-- Tombol Hapus -->
+        <td>
+            <button type="button" class="btn btn-danger btn-sm btn-action-icon" data-bs-toggle="modal"
+                    data-bs-target="#deleteModal"
+                    data-nama="{{ siswa.nama|escapejs }}"
+                    data-url="{% url 'siswa_delete' siswa.id %}">
+                <i class="bx bx-trash"></i>
+            </button>
+        </td>
+        {% endif %}
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="{% if request.user.profile.role == 'admin' %}15{% else %}13{% endif %}" class="text-center text-muted">Data siswa tidak ditemukan</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if siswa_page.paginator.num_pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if siswa_page.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1&{{ request.GET.urlencode|cut:'page' }}">&laquo;&laquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ siswa_page.previous_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&laquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&laquo;&laquo;</a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&laquo;</a>
+                </li>
+            {% endif %}
+
+            {% for i in siswa_page.paginator.page_range %}
+                {% if siswa_page.number == i %}
+                    <li class="page-item active" aria-current="page">
+                        <a class="page-link" href="#">{{ i }}</a>
+                    </li>
+                {% elif i > siswa_page.number|add:'-3' and i < siswa_page.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}&{{ request.GET.urlencode|cut:'page' }}">{{ i }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if siswa_page.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ siswa_page.next_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ siswa_page.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;&raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&raquo;</a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&raquo;&raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="text-center mt-5">
+        <p class="text-muted">Silahkan pilih kelas terlebih dahulu untuk menampilkan data siswa.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Tambah/Edit Siswa -->
+<div class="modal fade" id="siswaModal" tabindex="-1" aria-labelledby="siswaModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+        <div class="modal-header" 
+            style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+                    color: #fff;">
+            <h5 style="font-weight: bolder; font-size: 25px;" class="modal-title" id="siswaModalLabel">TAMBAH DATA SISWA</h5>
+        </div>
+
+      <form method="POST" enctype="multipart/form-data" id="siswaForm">
+        {% csrf_token %}
+        <div class="modal-body">
+            <div class="row">
+            <div id="edit-kelas-container">
+                <div class="col-md-6 mb-3">
+                    <label for="kelas_id" class="form-label">Kelas</label>
+                    <select name="kelas_id" id="kelas_id" class="form-select" required>
+                        <option value="">Pilih Kelas</option>
+                        {% for k in kelas_list %}
+                            <option value="{{ k.id }}">{{ k.nama }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+                <!-- Form fields -->
+                <!-- Form fields -->
+                <div class="col-md-6 mb-3">
+                    <label for="nama" class="form-label">Nama Lengkap</label>
+                    <input type="text" name="nama" id="nama" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="nisn" class="form-label">NISN</label>
+                    <input type="text" name="nisn" id="nisn" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="nomor_induk" class="form-label">Nomor Induk</label>
+                    <input type="text" name="nomor_induk" id="nomor_induk" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="jenis_kelamin" class="form-label">Jenis Kelamin</label>
+                    <select name="jenis_kelamin" id="jenis_kelamin" class="form-select" required>
+                        <option value="">Pilih</option>
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="tahun_ajaran" class="form-label">Tahun Ajaran</label>
+                    <input type="text" name="tahun_ajaran" id="tahun_ajaran" class="form-control" value="{{ tahun_ajaran }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="tempat_lahir" class="form-label">Tempat Lahir</label>
+                    <input type="text" name="tempat_lahir" id="tempat_lahir" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="tanggal_lahir" class="form-label">Tanggal Lahir</label>
+                    <input type="date" name="tanggal_lahir" id="tanggal_lahir" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="agama" class="form-label">Agama</label>
+                    <select name="agama" id="agama" class="form-select" required>
+                        <option value="">Pilih Agama</option>
+                        <option value="Islam">Islam</option>
+                        <option value="Kristen">Kristen</option>
+                        <option value="Katolik">Katolik</option>
+                        <option value="Hindu">Hindu</option>
+                        <option value="Buddha">Buddha</option>
+                        <option value="Konghucu">Konghucu</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="nama_ayah" class="form-label">Nama Ayah</label>
+                    <input type="text" name="nama_ayah" id="nama_ayah" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="nama_ibu" class="form-label">Nama Ibu</label>
+                    <input type="text" name="nama_ibu" id="nama_ibu" class="form-control" required>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label for="alamat" class="form-label">Alamat</label>
+                    <textarea name="alamat" id="alamat" class="form-control" rows="2" required></textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="no_hp" class="form-label">No HP</label>
+                    <input type="text" name="no_hp" id="no_hp" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="foto" class="form-label">Foto</label>
+                    <input type="file" name="foto" id="foto" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <input type="hidden" name="siswa_id" id="siswa_id">
+          <button type="submit" class="btn" style="background-color: #0382c7; color: #fff; border: none;">Simpan</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Hapus -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+        <h5 class="modal-title" id="deleteModalLabel" style="font-weight: bolder;">Konfirmasi Hapus</h5>
+      </div>
+      <div class="modal-body">
+        Apakah kamu yakin ingin menghapus siswa <strong id="deleteNama"></strong>?
+      </div>
+      <div class="modal-footer">
+        <form method="POST" id="deleteFormModal">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+               Hapus
+          </button>
+        </form>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Capitalize Each Word
+function capitalizeEachWord(str) {
+    return str.replace(/\b\w/g, function(l){ return l.toUpperCase() });
+}
+const capitalizeFields = ['nama','alamat','nama_ayah','nama_ibu'];
+capitalizeFields.forEach(id => {
+    const input = document.getElementById(id);
+    if(input){
+        input.addEventListener('input', function(){
+            this.value = capitalizeEachWord(this.value);
+        });
+    }
+});
+
+// Preview Foto
+const fotoInput = document.getElementById('foto');
+fotoInput.addEventListener('change', function(){
+    const file = this.files[0];
+    if(file){
+        let preview = document.getElementById('fotoPreview');
+        if(!preview){
+            preview = document.createElement('img');
+            preview.id = 'fotoPreview';
+            preview.style.width = '120px';
+            preview.style.height = '120px';
+            preview.style.objectFit = 'cover';
+            preview.style.marginTop = '10px';
+            this.parentNode.appendChild(preview);
+        }
+        preview.src = URL.createObjectURL(file);
+    }
+});
+
+// Modal Tambah/Edit
+const siswaModal = document.getElementById('siswaModal');
+siswaModal.addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const modalTitle = siswaModal.querySelector('.modal-title');
+    const form = siswaModal.querySelector('#siswaForm');
+
+    const kelasContainer = document.getElementById('edit-kelas-container');
+
+    if(button.getAttribute('data-action') === 'edit'){
+        kelasContainer.style.display = 'block'; // Tampilkan dropdown
+        modalTitle.textContent = 'EDIT DATA SISWA';
+        const siswaData = JSON.parse(button.getAttribute('data-siswa'));
+        form.action = '/siswa/edit/' + siswaData.id + '/';
+        for (const key in siswaData){
+            if(siswaData.hasOwnProperty(key) && form.elements[key]){
+                form.elements[key].value = siswaData[key];
+            }
+        }
+    } else {
+        kelasContainer.style.display = 'none'; // Sembunyikan dropdown
+        modalTitle.textContent = 'TAMBAH DATA SISWA';
+        form.action = '/siswa/tambah/';
+        form.reset();
+        form.querySelector('#siswa_id').value = '';
+        // Set the class from the filter dropdown for new students
+        const selectedKelasId = document.querySelector('select[name="kelas"]').value;
+        form.elements['kelas_id'].value = selectedKelasId;
+    }
+});
+
+// Modal Hapus
+const deleteModal = document.getElementById('deleteModal');
+deleteModal.addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const nama = button.getAttribute('data-nama');
+    const url = button.getAttribute('data-url');
+
+    deleteModal.querySelector('#deleteNama').textContent = nama;
+    const form = deleteModal.querySelector('#deleteFormModal');
+    form.action = url;
+});
+
+// Custom validation for Tanggal Lahir
+const tanggalLahirInput = document.getElementById('tanggal_lahir');
+if (tanggalLahirInput) {
+    tanggalLahirInput.addEventListener('invalid', function(event) {
+        if (event.target.validity.valueMissing) {
+            event.target.setCustomValidity('Tanggal lahir tidak boleh kosong');
+        }
+    });
+    tanggalLahirInput.addEventListener('input', function(event) {
+        // Reset custom validity message on input
+        event.target.setCustomValidity('');
+    });
+}
+
+// --- Real-time validation for NISN and Nomor Induk ---
+const nisnInput = document.getElementById('nisn');
+const nomorIndukInput = document.getElementById('nomor_induk');
+const siswaIdInput = document.getElementById('siswa_id');
+
+// Parse the data passed from the Django view
+const existingNisn = JSON.parse('{{ existing_nisn_json|escapejs }}');
+const existingNomorInduk = JSON.parse('{{ existing_nomor_induk_json|escapejs }}');
+
+function createValidator(inputElement, existingData, fieldName) {
+    inputElement.addEventListener('input', function() {
+        const currentValue = this.value;
+        // The ID of the student being edited. Will be NaN if in 'add' mode, which is fine.
+        const currentSiswaId = parseInt(siswaIdInput.value, 10);
+
+        if (currentValue && existingData.hasOwnProperty(currentValue)) {
+            const ownerId = existingData[currentValue];
+            // It's a duplicate if the owner ID is not the same as the current student's ID
+            if (ownerId !== currentSiswaId) {
+                this.setCustomValidity(`${fieldName} '${currentValue}' sudah terdaftar`);
+            } else {
+                // Value belongs to the current student, so it's valid
+                this.setCustomValidity('');
+            }
+        } else {
+            // Value is not in the list, so it's valid
+            this.setCustomValidity('');
+        }
+        // This is needed to trigger the browser to show/hide the message immediately
+        this.reportValidity();
+    });
+}
+
+if (nisnInput && nomorIndukInput) {
+    createValidator(nisnInput, existingNisn, 'NISN');
+    createValidator(nomorIndukInput, existingNomorInduk, 'Nomor Induk');
+}
+
+// Hapus Kelas
+document.getElementById('hapusKelasBtn').addEventListener('click', function() {
+    const kelasSelect = document.querySelector('select[name="kelas"]');
+    const kelasId = kelasSelect.value;
+    const selectedOption = kelasSelect.options[kelasSelect.selectedIndex];
+    const kelasNama = selectedOption ? selectedOption.text : '';
+
+    if (kelasId && confirm(`Anda yakin ingin menghapus kelas '${kelasNama}'? Semua siswa dalam kelas ini akan kehilangan asosiasi kelasnya.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/kelas/hapus/${kelasId}/`;
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}'; 
+
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+});
+
+// Handle Edit Kelas Modal
+const editKelasModal = document.getElementById('editKelasModal');
+if (editKelasModal) {
+    editKelasModal.addEventListener('show.bs.modal', function(event) {
+        const kelasSelect = document.querySelector('select[name="kelas"]');
+        const selectedOption = kelasSelect.options[kelasSelect.selectedIndex];
+        
+        if (selectedOption && selectedOption.value) {
+            const kelasId = selectedOption.value;
+            const kelasNama = selectedOption.text.split(' (')[0];
+            const waliKelasId = selectedOption.getAttribute('data-wali-id');
+
+            const form = document.getElementById('editKelasForm');
+            form.action = `/kelas/edit/${kelasId}/`;
+            
+            const namaInput = document.getElementById('edit_nama_kelas');
+            namaInput.value = kelasNama;
+
+            const waliKelasSelect = document.getElementById('edit_wali_kelas');
+            waliKelasSelect.value = waliKelasId;
+        }
+    });
+}
+
+});
+</script>
+<!-- Modal Tambah Kelas -->
+<div class="modal fade" id="tambahKelasModal" tabindex="-1" aria-labelledby="tambahKelasModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%); color: #fff;">
+        <h5 class="modal-title" id="tambahKelasModalLabel" style="font-weight: bolder;">Tambah Kelas Baru</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'tambah_kelas' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="nama_kelas" class="form-label">Nama Kelas</label>
+            <input type="text" name="nama_kelas" id="nama_kelas" class="form-control" placeholder="Contoh: Kelas A1" required>
+          </div>
+          <div class="mb-3">
+            <label for="wali_kelas" class="form-label">Pilih Wali Kelas</label>
+            <select name="wali_kelas" id="wali_kelas" class="form-select" required>
+                <option value="">---------</option>
+                {% for guru in wali_kelas_list %}
+                    <option value="{{ guru.id }}">{{ guru.nama }}</option>
+                {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn" style="background-color: #0382c7; color: #fff; border: none;">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal Edit Kelas -->
+<div class="modal fade" id="editKelasModal" tabindex="-1" aria-labelledby="editKelasModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #ffc107 10%, #ffecb3 100%); color: #333;">
+        <h5 class="modal-title" id="editKelasModalLabel" style="font-weight: bolder;">Edit Kelas</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" id="editKelasForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit_nama_kelas" class="form-label">Nama Kelas</label>
+            <input type="text" name="nama_kelas" id="edit_nama_kelas" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_wali_kelas" class="form-label">Pilih Wali Kelas</label>
+            <select name="wali_kelas" id="edit_wali_kelas" class="form-select" required>
+                <option value="">---------</option>
+                {% for guru in wali_kelas_list %}
+                    <option value="{{ guru.id }}">{{ guru.nama }}</option>
+                {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-warning">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

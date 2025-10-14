@@ -1,0 +1,517 @@
+{% extends 'base.html' %}
+{% block title %}Raport Digital{% endblock %}
+
+{% block content %}
+
+<!-- ================= Wrapper Utama ================= -->
+<div style="background-color: white; padding: 1.5rem; border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05); margin-top: -4rem;
+            max-width: 950px; margin-left: auto; margin-right: auto;">
+    
+    <!-- Row Search & Filter -->
+    <div style="padding-bottom: 10px; overflow-x: auto; white-space: nowrap;">
+        <form method="get" 
+                class="d-flex flex-nowrap align-items-center gap-2 mb-3" 
+                style="width: 100%;">
+
+            <!-- Search -->
+            <input type="text" 
+                name="q" 
+                class="form-control" 
+                placeholder="Nama, Nomor Induk, NISN" 
+                value="{{ q }}" 
+                style="flex: ; min-width: 200px;">
+
+            <!-- Tahun Ajaran -->
+            <select name="tahun_ajaran" 
+                    class="form-select" 
+                    style="flex: 1; min-width: 180px;">
+            <option value="">-- Tahun Ajaran --</option>
+            {% for ta in tahun_ajaran_list %}
+                <option value="{{ ta }}" {% if ta == tahun_ajaran %}selected{% endif %}>
+                Tahun Ajaran {{ ta }}
+                </option>
+            {% endfor %}
+            </select>
+
+            <!-- Semester -->
+            <select name="semester" 
+                    class="form-select" 
+                    style="flex: 1; min-width: 160px;">
+            <option value="">-- Semester --</option>
+            <option value="1" {% if semester == '1' %}selected{% endif %}>Semester Ganjil</option>
+            <option value="2" {% if semester == '2' %}selected{% endif %}>Semester Genap</option>
+            </select>
+
+            {% if request.user.profile.role != 'guru' %}
+            <!-- Kelas -->
+            <select name="kelas" 
+                    class="form-select" 
+                    style="flex: 1; min-width: 150px;">
+                <option value="">-- Pilih Kelas --</option>
+                {% for k in kelas_list %}
+                    <option value="{{ k.id }}" {% if k.id|stringformat:"s" == kelas_id %}selected{% endif %}>
+                        {{ k.nama }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            <!-- Tombol Filter -->
+            <button type="submit" 
+                    class="btn btn-primary"
+                    title="Filter"
+                    style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+                        color: #fff; border: none; border-radius: 6px;
+                        padding: 6px 16px; font-weight: 500;">
+            <i class='bx bx-filter-alt'></i>
+            </button>
+
+            <!-- Tombol Reset -->
+            <a href="{% url 'raport_digital' %}" 
+            class="btn btn-secondary"
+            title="Reset"
+            style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+                    color: #fff; border: none; border-radius: 6px;
+                    padding: 6px 16px; font-weight: 500;">
+            <i class='bx bx-refresh'></i>
+            </a>
+        </form>
+    </div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0">Daftar Rapor Digital {% if kelas_terpilih %} - Kelas {{ kelas_terpilih.nama }}{% endif %}</h5>
+    {% if request.user.profile.role == 'admin' %}
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center"
+            style="width: 50px; height: 40px;"
+            title="Tambah Refleksi Orangtua"
+            data-bs-toggle="modal" data-bs-target="#tambahRefleksiModal">
+            <i class='bx bx-list-plus fs-4'></i>
+        </button>
+        <button type="button" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center"
+            style="width: 50px; height: 40px;"
+            title="Kelola Refleksi Orangtua"
+            data-bs-toggle="modal" data-bs-target="#kelolaRefleksiModal">
+            <i class='bx bx-edit-alt fs-4'></i>
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+{% if siswa_page %}
+<div class="table-responsive">
+    <table class="table table-bordered align-middle text-center table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>No</th>
+                <th>Foto</th>
+                <th>Nama</th>
+                <th>Nomor Induk</th>
+                <th>Cetak</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for siswa in siswa_page %}
+            <tr>
+                <td>{{ forloop.counter0|add:siswa_page.start_index }}</td>
+                <td>
+                    {% if siswa.foto %}
+                        <img src="{{ siswa.foto.url }}" alt="{{ siswa.nama }}" 
+                             style="width: 60px; height: 60px; object-fit: cover;">
+                    {% else %}
+                        <span class="text-muted">Tidak ada foto</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: left;">{{ siswa.nama }}</td>
+                <td>{{ siswa.nomor_induk }}</td>
+                <td>
+                    {% if siswa.raport_status == 'lengkap' %}
+                        <a href="{% url 'cetak_raport' siswa.id %}?tahun_ajaran={{ tahun_ajaran }}&semester={{ semester }}" class="btn btn-sm btn-primary">Rapor</a>
+                    {% else %}
+                        <a href="#" 
+                           class="btn btn-sm btn-primary report-warning" 
+                           data-message="{% if siswa.raport_status == 'belum_lengkap' %}Rapor belum dapat dicetak karena data belum lengkap.{% else %}Cetak rapor tidak tersedia, data masih kosong.{% endif %}">
+                           Rapor
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'cetak_biodata' siswa.id %}" class="btn btn-sm btn-secondary">Biodata</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-muted">Belum ada data siswa</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center mt-5">
+    <p class="text-muted">Silahkan pilih kelas terlebih dahulu untuk menampilkan data siswa.</p>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if siswa_page.paginator.num_pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if siswa_page.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1&{{ request.GET.urlencode|cut:'page' }}">&laquo;&laquo;</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.previous_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&laquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&laquo;&laquo;</a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&laquo;</a>
+            </li>
+        {% endif %}
+
+        {% for i in siswa_page.paginator.page_range %}
+            {% if siswa_page.number == i %}
+                <li class="page-item active" aria-current="page">
+                    <a class="page-link" href="#">{{ i }}</a>
+                </li>
+            {% elif i > siswa_page.number|add:'-3' and i < siswa_page.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}&{{ request.GET.urlencode|cut:'page' }}">{{ i }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if siswa_page.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.next_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;&raquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&raquo;</a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&raquo;&raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+</div>
+
+{% if request.user.profile.role == 'admin' %}
+<!-- Modal Tambah Refleksi -->
+<div class="modal fade" id="tambahRefleksiModal" tabindex="-1" aria-labelledby="tambahRefleksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+                <h5 class="modal-title text-center w-100" id="tambahRefleksiModalLabel" style="font-weight: bolder;">Tambah Refleksi Baru</h5>
+            </div>
+            <div class="modal-body">
+                <div id="refleksi-error-alert" class="alert alert-danger d-none" role="alert"></div>
+                <div class="mb-3">
+                    <label for="teksRefleksiInput" class="form-label">Teks Refleksi</label>
+                    <textarea class="form-control" id="teksRefleksiInput" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="simpanRefleksiBtn">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Kelola Refleksi -->
+<div class="modal fade" id="kelolaRefleksiModal" tabindex="-1" aria-labelledby="kelolaRefleksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+                <h5 class="modal-title text-center w-100" id="kelolaRefleksiModalLabel" style="font-weight: bolder;">Kelola Refleksi Orang Tua</h5>
+            </div>
+            <div class="modal-body">
+                <div id="kelola-refleksi-error" class="alert alert-danger d-none" role="alert"></div>
+                <ul class="list-group" id="refleksi-list-management">
+                    {% for refleksi in all_refleksi %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center" data-refleksi-id="{{ refleksi.id }}">
+                        <p class="mb-0">{{ refleksi.teks }}</p>
+                        <span class="ms-auto">
+                            <button type="button" class="btn btn-warning btn-sm edit-refleksi-btn me-2">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm delete-refleksi-btn">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Hapus Refleksi -->
+<div class="modal fade" id="deleteRefleksiModal" tabindex="-1" aria-labelledby="deleteRefleksiModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteRefleksiForm">
+        {% csrf_token %}
+        <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+            <h5 class="modal-title text-center w-100" id="deleteRefleksiModalLabel">Konfirmasi Hapus Refleksi</h5>
+        </div>
+        <div class="modal-body">
+          Apakah Anda yakin ingin menghapus refleksi ini? <br> <strong id="deleteRefleksiTeks"></strong>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">Hapus</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit Refleksi -->
+<div class="modal fade" id="editRefleksiModal" tabindex="-1" aria-labelledby="editRefleksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #0382c7; color: white;">
+                <h5 class="modal-title text-center w-100" id="editRefleksiModalLabel" style="font-weight: bolder;">Edit Refleksi</h5>
+            </div>
+            <div class="modal-body">
+                <div id="edit-refleksi-error" class="alert alert-danger d-none" role="alert"></div>
+                <input type="hidden" id="editRefleksiId">
+                <div class="mb-3">
+                    <label for="editRefleksiTeksInput" class="form-label">Teks Refleksi</label>
+                    <textarea class="form-control" id="editRefleksiTeksInput" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="updateRefleksiBtn">Simpan Perubahan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // --- Script for Adding Reflections ---
+    const simpanRefleksiBtn = document.getElementById('simpanRefleksiBtn');
+    if (simpanRefleksiBtn) {
+        const teksRefleksiInput = document.getElementById('teksRefleksiInput');
+        const tambahRefleksiModal = new bootstrap.Modal(document.getElementById('tambahRefleksiModal'));
+        const errorAlert = document.getElementById('refleksi-error-alert');
+
+        simpanRefleksiBtn.addEventListener('click', function () {
+            const teks = teksRefleksiInput.value.trim();
+            const tahunAjaran = document.querySelector('select[name="tahun_ajaran"]').value;
+
+            if (!teks) {
+                errorAlert.textContent = 'Teks refleksi tidak boleh kosong.';
+                errorAlert.classList.remove('d-none');
+                return;
+            }
+            if (!tahunAjaran) {
+                errorAlert.textContent = 'Silakan pilih Tahun Ajaran terlebih dahulu.';
+                errorAlert.classList.remove('d-none');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('teks', teks);
+            formData.append('tahun_ajaran', tahunAjaran);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch('{% url "tambah_refleksi_ajax" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {'X-CSRFToken': '{{ csrf_token }}'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    errorAlert.textContent = data.message || 'Terjadi kesalahan.';
+                    errorAlert.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error during fetch:', error);
+                errorAlert.textContent = 'Terjadi kesalahan jaringan.';
+                errorAlert.classList.remove('d-none');
+            });
+        });
+
+        document.getElementById('tambahRefleksiModal').addEventListener('hidden.bs.modal', function () {
+            errorAlert.classList.add('d-none');
+            teksRefleksiInput.value = '';
+        });
+    }
+
+    // --- Script for Deleting Reflections ---
+    const kelolaRefleksiModal = document.getElementById('kelolaRefleksiModal');
+    if (kelolaRefleksiModal) {
+        const kelolaErrorAlert = document.getElementById('kelola-refleksi-error');
+
+        kelolaRefleksiModal.addEventListener('click', function(event) {
+            // Handle Delete Button
+            if (event.target.closest('.delete-refleksi-btn')) {
+                const deleteBtn = event.target.closest('.delete-refleksi-btn');
+                const listItem = deleteBtn.closest('.list-group-item');
+                const refleksiId = listItem.getAttribute('data-refleksi-id');
+                const refleksiTeks = listItem.querySelector('p').textContent.trim();
+
+                const deleteModalElement = document.getElementById('deleteRefleksiModal');
+                const deleteModal = new bootstrap.Modal(deleteModalElement);
+                document.getElementById('deleteRefleksiTeks').textContent = `"${refleksiTeks}"`;
+                const deleteForm = document.getElementById('deleteRefleksiForm');
+                deleteForm.action = `/raport-digital/hapus-refleksi-ajax/${refleksiId}/`;
+
+                const kelolaModalInstance = bootstrap.Modal.getInstance(kelolaRefleksiModal);
+                if (kelolaModalInstance) kelolaModalInstance.hide();
+                deleteModal.show();
+
+                deleteForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    fetch(deleteForm.action, {
+                        method: 'POST',
+                        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        deleteModal.hide();
+                        if (data.status === 'success') {
+                            window.location.reload();
+                        } else {
+                            kelolaErrorAlert.textContent = data.message || 'Gagal menghapus refleksi.';
+                            kelolaErrorAlert.classList.remove('d-none');
+                            const kelolaModalInstance = bootstrap.Modal.getInstance(kelolaRefleksiModal) || new bootstrap.Modal(kelolaRefleksiModal);
+                            kelolaModalInstance.show();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during delete fetch:', error);
+                    });
+                };
+            } 
+            // Handle Edit Button
+            else if (event.target.closest('.edit-refleksi-btn')) {
+                const editBtn = event.target.closest('.edit-refleksi-btn');
+                const listItem = editBtn.closest('.list-group-item');
+                const refleksiId = listItem.getAttribute('data-refleksi-id');
+                const refleksiTeks = listItem.querySelector('p').textContent.trim();
+
+                document.getElementById('editRefleksiId').value = refleksiId;
+                document.getElementById('editRefleksiTeksInput').value = refleksiTeks;
+
+                const kelolaModalInstance = bootstrap.Modal.getInstance(kelolaRefleksiModal);
+                if (kelolaModalInstance) kelolaModalInstance.hide();
+                const editModal = new bootstrap.Modal(document.getElementById('editRefleksiModal'));
+                editModal.show();
+            }
+        });
+    }
+
+    // --- Script for Editing Reflections ---
+    const updateRefleksiBtn = document.getElementById('updateRefleksiBtn');
+    if (updateRefleksiBtn) {
+        const editTeksInput = document.getElementById('editRefleksiTeksInput');
+        const editIdInput = document.getElementById('editRefleksiId');
+        const editModal = new bootstrap.Modal(document.getElementById('editRefleksiModal'));
+        const editErrorAlert = document.getElementById('edit-refleksi-error');
+
+        updateRefleksiBtn.addEventListener('click', function() {
+            const refleksiId = editIdInput.value;
+            const newTeks = editTeksInput.value.trim();
+            const tahunAjaran = document.querySelector('select[name="tahun_ajaran"]').value;
+
+            if (!newTeks) {
+                editErrorAlert.textContent = 'Teks refleksi tidak boleh kosong.';
+                editErrorAlert.classList.remove('d-none');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('teks', newTeks);
+            formData.append('tahun_ajaran', tahunAjaran);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch(`/raport-digital/edit-refleksi-ajax/${refleksiId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {'X-CSRFToken': '{{ csrf_token }}'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    editErrorAlert.textContent = data.message || 'Terjadi kesalahan.';
+                    editErrorAlert.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error during edit fetch:', error);
+                editErrorAlert.textContent = 'Terjadi kesalahan jaringan.';
+                editErrorAlert.classList.remove('d-none');
+            });
+        });
+    }
+});
+</script>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Generic Info Modal -->
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #0382c7; color: #fff;">
+        <h5 class="modal-title" id="infoModalLabel">Pemberitahuan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="infoModalBody">
+        <!-- Message will be inserted here by JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const reportWarningButtons = document.querySelectorAll('.report-warning');
+    const infoModalElement = document.getElementById('infoModal');
+    if (infoModalElement) {
+        const infoModal = new bootstrap.Modal(infoModalElement);
+        const infoModalBody = document.getElementById('infoModalBody');
+
+        reportWarningButtons.forEach(function(button) {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                const message = this.getAttribute('data-message');
+                if (infoModalBody) {
+                    infoModalBody.textContent = message;
+                }
+                infoModal.show();
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

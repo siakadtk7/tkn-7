@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+{% block title %}Absensi{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css">
+
+<!-- ================= Wrapper Utama ================= -->
+<div class="form-wrapper"
+     style="background-color: white; padding: 1.5rem; border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05); margin-top: -4rem;
+            max-width: 950px; margin-left: auto; margin-right: auto;
+            position: relative; z-index: 1;">
+
+    <form method="GET">
+        <!-- ================= Header Halaman ================= -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <h5 class="fw-bold mb-0">
+                    Presensi{% if today %} - {{ today }}{% endif %}
+                </h5>
+                {% if role in 'admin,guru,kepala' %}
+                <!-- Filter Tahun Ajaran -->
+                <select name="tahun_ajaran" class="form-select" onchange="this.form.submit()" style="border: none; font-weight: bold; font-size: 1.25rem; width: auto; background-image: none; padding: 0; padding-left: 1rem; box-shadow: none;">
+                    {% for ta in tahun_ajaran_list %}
+                    <option value="{{ ta }}" {% if ta == tahun_ajaran %}selected{% endif %}>
+                        Tahun Ajaran {{ ta }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+
+            {% if role == 'admin' %}
+            <!-- Tombol Download PDF -->
+            <a href="{% url 'absensi_download_pdf' %}?tahun_ajaran={{ tahun_ajaran }}&bulan={{ bulan }}&jenis_kelamin={{ jenis_kelamin }}&kelas={{ kelas_id }}"
+
+               class="ms-auto"
+               style="color: black; font-size:1.5rem; display:flex; align-items-center; justify-content:center; text-decoration:none;">
+                <i class="bi bi-printer"></i>
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- ================= Filter & Pencarian ================= -->
+        <div>
+            <div class="d-flex align-items-center gap-2">
+
+                {% if role in 'admin,guru' %}
+                <!-- Input Cari Nama / Nomor Induk -->
+                <input type="text" name="q" placeholder="Nama, Nomor Induk"
+                       class="form-control"
+                       value="{{ request.GET.q|default_if_none:'' }}"
+                       style="width: 200px; flex-grow: 1;">
+                {% endif %}
+
+                            {% if role == 'admin' %}
+                            <!-- Filter Kelas -->
+                            <select name="kelas" class="form-control" style="width: 200px;">
+                                <option value="">Pilih Kelas</option>
+                                {% for k in kelas_list %}
+                                <option value="{{ k.id }}" {% if k.id|stringformat:"s" == kelas_id %}selected{% endif %}>
+                                    {{ k.nama }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                
+                            {% if role in 'admin,kepala,guru' %}
+                            <!-- Filter Jenis Kelamin -->
+                            <select name="jenis_kelamin" class="form-control" style="width: 180px;">
+                                <option value="">Pilih Jenis Kelamin</option>
+                                <option value="L" {% if jenis_kelamin == 'L' %}selected{% endif %}>Laki-laki</option>
+                                <option value="P" {% if jenis_kelamin == 'P' %}selected{% endif %}>Perempuan</option>
+                            </select>
+                            {% endif %}
+                
+                            {% if role in 'admin,kepala' %}
+                            <!-- Filter Bulan / Tahun -->
+                            <input type="month" name="bulan" class="form-control"
+                                   value="{{ bulan }}" style="width: 150px;">
+                            {% endif %}
+                <!-- Tombol Filter & Reset -->
+                <button type="submit" class="btn btn-primary" title="Filter"
+                        style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);">
+                    <i class="bx bx-filter-alt"></i>
+                </button>
+
+                <a href="{% url 'absensi' %}" class="btn btn-secondary" title="Reset"
+                   style="background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);">
+                    <i class="bx bx-refresh"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- ================= Tabel Absensi Guru ================= -->
+    {% if role == 'guru' %}
+    <h5 class="fw-bold mt-4">Kelas {{ kelas_terpilih.nama|default:'Tidak Ditemukan' }}</h5>
+    <div class="container" style="width: 100%; margin-top: 1rem;">
+        <form method="POST">
+            {% csrf_token %}
+            <table style="width:100%; border-collapse:collapse; border:1px solid #dee2e6;">
+                <thead style="background-color:#ebecec;">
+                    <tr>
+                        <th style="width:50px; text-align:center;">No</th>
+                        <th style="min-width:200px; text-align:center;">Nama</th>
+                        <th style="min-width:120px; text-align:center;">Nomor Induk</th>
+                        <th style="min-width:150px; text-align:center;">Status Kehadiran</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for siswa in siswa_page %}
+                    <tr>
+                        <td style="text-align:center;">
+                            {{ forloop.counter0|add:siswa_page.start_index }}
+                        </td>
+                        <td>{{ siswa.nama }}</td>
+                        <td style="text-align:center;">{{ siswa.nomor_induk }}</td>
+                        <td style="text-align:center; vertical-align:middle;">
+                            {% if siswa.absensi_hari_ini %}
+                            <span>{{ siswa.absensi_hari_ini }}</span>
+                            {% else %}
+                            <select name="status_{{ siswa.id }}" style="width:100%; height:35px; text-align:center;">
+                                <option value="">-- Pilih --</option>
+                                <option value="Hadir">Hadir</option>
+                                <option value="Sakit">Sakit</option>
+                                <option value="Izin">Izin</option>
+                                <option value="Alpa">Tanpa Keterangan</option>
+                            </select>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            Data siswa tidak ditemukan.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if not all_absent and siswa_page %}
+            <!-- Tombol Simpan Absensi -->
+            <br>
+            <button type="submit"
+                    style="margin-top:10px; padding:0.5rem 1rem; border:none;
+                           background-color:#0382c7; color:#fff; border-radius:0.25rem;">
+                Simpan Absensi
+            </button>
+            {% endif %}
+        </form>
+
+        <!-- ================= Pagination ================= -->
+        {% if siswa_page.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if siswa_page.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1&{{ request.GET.urlencode|cut:'page' }}">&laquo;&laquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ siswa_page.previous_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&laquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">&laquo;&laquo;</a></li>
+                <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Halaman {{ siswa_page.number }} dari {{ siswa_page.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if siswa_page.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ siswa_page.next_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ siswa_page.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;&raquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">&raquo;</a></li>
+                <li class="page-item disabled"><a class="page-link" href="#">&raquo;&raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <!-- ================= Role Admin: Tabel Rekap ================= -->
+    {% elif role == 'admin' %}
+        {% if siswa_page %}
+        <h5 class="fw-bold mt-4">Rekap Absensi - Kelas {{ kelas_terpilih.nama|default:'' }}</h5>
+        <form method="POST" style="margin-top: 1rem;">
+            {% csrf_token %}
+            <div style="overflow-x:auto; max-width:100%;">
+                <table style="min-width:1200px; border-collapse:collapse; border:1px solid #dee2e6;">
+                    <thead style="background-color:#f8f9fa; position:sticky; top:0; z-index:10;">
+                        <tr>
+                            <th style="min-width:50px; text-align:center; position:sticky; left:0; background:#f8f9fa; z-index:20;">No</th>
+                            <th style="min-width:220px; text-align:center; position:sticky; left:50px; background:#f8f9fa; z-index:20;">Nama</th>
+                            <th style="min-width:150px; text-align:center; position:sticky; left:270px; background:#f8f9fa; z-index:20;">Nomor Induk</th>
+                            {% for day in tanggal_list %}
+                            <th style="min-width:50px; text-align:center;">{{ day.day }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for row in siswa_data %}
+                        <tr style="transition: background-color 0.2s;">
+                            <td style="text-align:center; position:sticky; left:0; background:white; z-index:10;">
+                                {{ forloop.counter0|add:siswa_page.start_index }}
+                            </td>
+                            <td style="position:sticky; left:50px; background:white; z-index:10;">{{ row.siswa.nama }}</td>
+                            <td style="text-align:center; position:sticky; left:270px; background:white; z-index:10;">{{ row.siswa.nomor_induk }}</td>
+
+                            {% for status in row.status_harian %}
+                            <td>
+                                <select name="status_{{ row.siswa.id }}_{{ forloop.counter }}"
+                                        style="width:100%; height:35px; text-align:center;
+                                        {% if status == 'Hadir' %}background-color:#d4edda;color:#155724;
+                                        {% elif status == 'Sakit' %}background-color:#fff3cd;color:#856404;
+                                        {% elif status == 'Izin' %}background-color:#d1ecf1;color:#0c5460;
+                                        {% elif status == 'Alpa' %}background-color:#f8d7da;color:#721c24;
+                                        {% endif %}">
+                                    <option value="" {% if status == "" %}selected{% endif %}>-</option>
+                                    <option value="Hadir" {% if status == "Hadir" %}selected{% endif %}>H</option>
+                                    <option value="Sakit" {% if status == "Sakit" %}selected{% endif %}>S</option>
+                                    <option value="Izin" {% if status == "Izin" %}selected{% endif %}>I</option>
+                                    <option value="Alpa" {% if status == "Alpa" %}selected{% endif %}>A</option>
+                                </select>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ tanggal_list|length|add:3 }}" class="text-center text-muted">
+                                Data siswa tidak ditemukan.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tombol Simpan Absensi -->
+            <button type="submit"
+                    style="margin-top:10px; padding:0.5rem 1rem;
+                           background: linear-gradient(135deg, #0382c7 10%, #92beda 100%);
+                           color: #fff; border:none; border-radius:0.25rem;">
+                Simpan Absensi
+            </button>
+        </form>
+        {% else %}
+        <div class="text-center mt-5">
+            <p class="text-muted">Silahkan pilih kelas terlebih dahulu untuk menampilkan data siswa.</p>
+        </div>
+        {% endif %}
+
+    <!-- Pagination -->
+    {% if siswa_page.paginator.num_pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if siswa_page.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1&{{ request.GET.urlencode|cut:'page' }}">&laquo;&laquo;</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.previous_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&laquo;</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><a class="page-link" href="#">&laquo;&laquo;</a></li>
+            <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">Halaman {{ siswa_page.number }} dari {{ siswa_page.paginator.num_pages }}</span>
+            </li>
+
+            {% if siswa_page.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.next_page_number }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ siswa_page.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page' }}">&raquo;&raquo;</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><a class="page-link" href="#">&raquo;</a></li>
+            <li class="page-item disabled"><a class="page-link" href="#">&raquo;&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- ================= Role Kepala: Statistik Absensi ================= -->
+    {% elif role == 'kepala' %}
+    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:50px;">
+        <div style="flex:1; min-width:300px;">
+            <h6>Statistik Kehadiran Hari Ini</h6>
+            <canvas id="chartHarian" style="width:100%; height:300px;"></canvas>
+        </div>
+
+        <div style="flex:1; min-width:300px;">
+            <h6>Statistik Kehadiran Bulanan</h6>
+            <canvas id="chartBulanan" style="width:100%; height:300px;"></canvas>
+        </div>
+    </div>
+
+    <div style="margin-top: 50px;">
+        <h6>Rekapitulasi Persentase Kehadiran (Bulan Ini)</h6>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px;">
+            <div style="flex:1; min-width:150px; background-color: #d4edda; color: #155724; padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+                Hadir: {{ persentase_hadir|floatformat:2 }}%
+            </div>
+            <div style="flex:1; min-width:150px; background-color: #fff3cd; color: #856404; padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+                Sakit: {{ persentase_sakit|floatformat:2 }}%
+            </div>
+            <div style="flex:1; min-width:150px; background-color: #d1ecf1; color: #0c5460; padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+                Izin: {{ persentase_izin|floatformat:2 }}%
+            </div>
+            <div style="flex:1; min-width:150px; background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+                Tanpa Keterangan: {{ persentase_alpa|floatformat:2 }}%
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Script Chart.js ================= -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+
+    <script>
+        /* ---------- Grafik Harian ---------- */
+        const ctxHarian = document.getElementById('chartHarian').getContext('2d');
+        new Chart(ctxHarian, {
+            type: 'bar',
+            data: {
+                labels: ['Hadir', 'Sakit', 'Izin', 'Alpa'],
+                datasets: [{
+                    label: 'Jumlah Siswa',
+                    data: [{{ stats_harian.Hadir }}, {{ stats_harian.Sakit }}, {{ stats_harian.Izin }}, {{ stats_harian.Alpa }}],
+                    backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#dc3545']
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        /* ---------- Grafik Bulanan ---------- */
+        const labelsBulanan = [{% for day in absensi_bulanan.keys %}'{{ day }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+        const hadirBulanan = [{% for day, data in absensi_bulanan.items %}{{ data.Hadir }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        const sakitBulanan = [{% for day, data in absensi_bulanan.items %}{{ data.Sakit }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        const izinBulanan = [{% for day, data in absensi_bulanan.items %}{{ data.Izin }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        const alpaBulanan = [{% for day, data in absensi_bulanan.items %}{{ data.Alpa }}{% if not forloop.last %},{% endif %}{% endfor %}];
+
+        const ctxBulanan = document.getElementById('chartBulanan').getContext('2d');
+        new Chart(ctxBulanan, {
+            type: 'line',
+            data: {
+                labels: labelsBulanan,
+                datasets: [
+                    { label: 'Hadir', data: hadirBulanan, borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.2)', fill: true, tension:0.3 },
+                    { label: 'Sakit', data: sakitBulanan, borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.2)', fill: true, tension:0.3 },
+                    { label: 'Izin', data: izinBulanan, borderColor: '#17a2b8', backgroundColor: 'rgba(23,162,184,0.2)', fill: true, tension:0.3 },
+                    { label: 'Alpa', data: alpaBulanan, borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.2)', fill: true, tension:0.3 }
+                ]
+            },
+            options: {
+                responsive:true,
+                plugins:{ legend:{ position:'top' } },
+                scales:{ y:{ beginAtZero:true } }
+            }
+        });
+    </script>
+    {% endif %}
+</div>
+
+{% endblock %}

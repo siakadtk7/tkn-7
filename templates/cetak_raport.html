@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Raport {{ siswa.nama }}{% endblock %}
+
+{% block content %}
+
+<style>
+    .refleksi-line {
+    border-bottom: 1px dotted #999;  /* bisa diganti dashed kalau mau strip */
+    margin-bottom: 2rem;
+}
+.dotted-line-answer {
+    border-bottom: 1px dotted #999;
+    height: 1.5em;
+    margin-bottom: 1em;
+}
+
+/*!
+ * Bootstrap Icons (https://icons.getbootstrap.com)
+ * Copyright 2019-2023 The Bootstrap Icons Authors
+ * Licensed under MIT (https://github.com/twbs/icons/blob/main/LICENSE)
+ */
+@font-face{font-family:"bootstrap-icons";src:url('/static/fonts/bootstrap-icons/bootstrap-icons.woff2') format('woff2'),url('/static/fonts/bootstrap-icons/bootstrap-icons.woff') format('woff'),url('/static/fonts/bootstrap-icons/bootstrap-icons.ttf') format('truetype')}
+.bi::before, [class*=" bi-"]::before{display:inline-block;font-family:"bootstrap-icons"!important;font-style:normal;font-weight:normal!important;line-height:1;text-rendering:auto;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.bi-heart::before{content:"\f443"}.bi-book::before{content:"\f11d"}.bi-x-circle::before{content:"\f5b3"}.bi-x::before{content:"\f5b3"}
+</style>
+
+<!-- ================= Wrapper Utama ================= -->
+<div style="background-color: white; padding: 1.5rem; border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05); margin-top: -4rem;
+            max-width: 950px; margin-left: auto; margin-right: auto;">
+
+    <!-- Header -->
+    <div style="position: relative; text-align: center;">
+        <h5 class="text-center fw-bold mb-4">
+            Laporan Capaian Pembelajaran Anak <br> TK Negeri 7 Tanjungpinang
+        </h5> <br>
+        {% if laporan and request.user.profile.role == 'admin' or laporan and request.user.profile.role == 'guru' %}
+            <a href="{% url 'raport_pdf' laporan.pk %}?tahun_ajaran={{ tahun_ajaran }}&semester={{ semester }}"
+            id="print-raport-btn"
+            style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); 
+                    color:#a0a0a0; font-size:1.5rem; text-decoration:none; transition: color 0.3s;" 
+            onmouseover="this.style.color='#606060'" 
+            onmouseout="this.style.color='#a0a0a0'">
+            <i class="bi bi-printer"></i>
+            </a>
+        {% endif %}
+    </div>
+
+    <table class="table table-borderless" style="width: 100%;">
+        <tr>
+            <td style="width: 40%; vertical-align: top;">
+                <table class="table table-borderless" style="width: 100%;">
+                    <tr>
+                        <td><strong>Nama</strong></td>
+                        <td style="width: 20px; text-align: center;">:</td>
+                        <td>{{ siswa.nama }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nomor Induk</strong></td>
+                        <td style="width: 20px; text-align: center;">:</td>
+                        <td>{{ siswa.nomor_induk }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NISN</strong></td>
+                        <td style="width: 20px; text-align: center;">:</td>
+                        <td>{{ siswa.nisn }}</td>
+                    </tr>
+                </table>
+            </td>
+            <td style="width: 60%; vertical-align: top;">
+                <table class="table table-borderless" style="width: 100%;">
+                    <tr>
+                        <td style="text-align: left;padding-left: 200px;"><strong>Semester</strong></td>
+                        <td>:</td>
+                        <td style="padding-left: 5px;">{{ semester }}</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;padding-left: 200px;"><strong>Tahun Ajaran</strong></td>
+                        <td>:</td>
+                        <td style="padding-left: 5px;">{{ tahun_ajaran }}</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;padding-left: 200px;"><strong>Kelas</strong></td>
+                        <td>:</td>
+                        <td style="padding-left: 5px;">{{ kelas_nama }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+<hr><hr>
+
+    <!-- Laporan Aspek -->
+    {% for aspek in aspek_list %}
+    <div class="mb-4" style="page-break-inside: avoid;">
+        <h5 class="fw-bold" 
+            style="background-color: #f2f2f2; 
+                   padding: 0.5rem 0.75rem; 
+                   margin-bottom: 1rem; 
+                   border-radius: 0.4rem; 
+                   text-transform: capitalize;">
+            {{ aspek.aspek.nama_aspek }}
+        </h5>
+
+        {% if aspek.foto %}
+        <div style="overflow: hidden;">
+            <img src="{{ aspek.foto.url }}" 
+                 alt="Foto {{ aspek.aspek.nama_aspek }}" 
+                 style="float: left; width: {{ aspek.display_width }}; height: {{ aspek.display_height }}; object-fit: cover; margin-right: 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem;">
+            <p style="text-align: justify;">{{ aspek.deskripsi|default:"-" }}</p>
+        </div>
+        {% else %}
+            <p>{{ aspek.deskripsi|default:"-" }}</p>
+        {% endif %}
+    </div>
+    {% empty %}
+        <p class="text-muted">Belum ada laporan aspek.</p>
+    {% endfor %}
+
+<div style="page-break-before: always;"></div>
+
+<!-- Refleksi Orang Tua -->
+<hr>
+    <div class="mt-4" style="max-width: 900px; margin: auto;">
+        <hr><h5 class="fw-bold mb-3">Refleksi Orang Tua</h5><hr>
+        
+        <div style="border: 1px solid #ccc; border-radius: 0.5rem; padding: 1rem; min-height: 100px;">
+            {% for refleksi in refleksi_list %}
+                <div style="margin-bottom: 1.5rem;">
+                    <p style="margin-bottom: 0.3rem;">{{ forloop.counter }}. {{ refleksi.teks }}?</p>
+                    <div class="dotted-line-answer"></div>
+                    <div class="dotted-line-answer"></div>
+                    <div class="dotted-line-answer"></div>
+                </div>
+            {% empty %}
+                <p class="text-muted">Belum ada catatan refleksi untuk tahun ajaran ini.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+<br>
+
+    <!-- Kehadiran Semester -->
+    <hr><h5 class="fw-bold mt-4">Kehadiran</h5> <hr>
+    <div class="d-flex gap-3 mt-2">
+        <!-- Sakit -->
+        <div style="flex: 1; background-color: #fce4e4; color: #a94442; 
+                    padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+            <i class='bi bi-heart' style="font-size:1.5rem;"></i><br>
+            Sakit : {{ total_sakit }} Hari
+        </div>
+        <!-- Izin -->
+        <div style="flex: 1; background-color: #fff8e1; color: #8a6d3b; 
+                    padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+            <i class='bi bi-book' style="font-size:1.5rem;"></i><br>
+            Izin : {{ total_izin }} Hari
+        </div>
+        <!-- Alpha -->
+        <div style="flex: 1; background-color: #fde2e2; color: #a94442; 
+                    padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+            <i class='bi bi-x' style="font-size:1.5rem;"></i><br>
+            Tanpa Keterangan : {{ total_alpha }} Hari
+        </div>
+    </div>
+
+<hr>
+
+    <!-- Tanda Tangan -->
+    <div class="mt-5" style="max-width: 900px; margin: auto;">
+        <div class="d-flex justify-content-between" style="margin-bottom: 2rem;">
+            <!-- Orang Tua / Wali -->
+            <div class="text-center" style="flex: 1;">
+                <p>Orang Tua / Wali,</p>
+                <div style="height: 60px;"></div> <!-- ruang tanda tangan -->
+                <p style="font-weight: bold;">
+                    {{ siswa.nama_ayah }}
+                </p>
+            </div>
+            <!-- Guru -->
+            <div class="text-center" style="flex: 1;">
+            <p>Wali Kelas,</p>
+            <div style="height: 60px;"></div> <!-- ruang tanda tangan -->
+            <p style="font-weight: bold; margin-bottom: 0; line-height: 1;">{{ wali_kelas.nama|title }}</p>
+            <p style="line-height: 1.5;">NIP. {{ wali_kelas.nip }}</p>
+            </div>
+        </div>
+
+        <!-- Mengetahui Kepala TK -->
+        <div class="text-center mt-3">
+            <p style="margin-bottom: 0; line-height: 1;">Mengetahui,</p>
+            <p style="line-height: 1;">Kepala TK Negeri 7 Tanjungpinang</p>
+            <div style="height: 60px;"></div> <!-- ruang tanda tangan -->
+            <p style="font-weight: bold; margin-bottom: 0; line-height: 1;">{{ kepala_sekolah.nama|title }}</p>
+            <p style="line-height: 1.5;">NIP. {{ kepala_sekolah.nip }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

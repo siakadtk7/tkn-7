@@ -1,0 +1,29 @@
+html
+      <!DOCTYPE html>
+      <html lang="id">
+      <head>
+      <meta charset="UTF-8">
+      <title>Test WeasyPrint</title>
+      <style>
+          @page {
+              size: A4;
+              margin: 1cm;
+          }
+          body {
+              font-family: sans-serif;
+              font-size: 12pt;
+          }
+      </style>
+      </head>
+      <body>
+          <h1>Halaman 1</h1>
+          <p>Ini adalah konten halaman 1.</p>
+          <p>Konten ini seharusnya muncul di halaman pertama.</p>
+          <p style="page-break-before: always;">Halaman 2</p>
+          <p>Konten ini seharusnya muncul di halaman kedua.</p>
+          <p style="page-break-before: always;">Halaman 3</p>
+          <p>Konten ini seharusnya muncul di halaman ketiga.</p>
+          <p style="page-break-before: always;">Halaman 4</p>
+          <p>Konten ini seharusnya muncul di halaman keempat.</p>
+      </body>
+      </html>

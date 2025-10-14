@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Admin{% endblock %}
+
+{% block content %}
+
+<!-- ================= Wrapper Utama ================= -->
+<div style="background-color: white; padding: 2rem; border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05); margin-top: -4rem;
+            max-width: 950px; margin-left: auto; margin-right: auto; position: relative; z-index: 1;">
+    <div class="row mb-5">
+        <!-- Pie Chart Jumlah Siswa -->
+        <div class="col-md-4 mb-4">
+            <h5 style="margin-bottom: 30px;" class="text-center">Jumlah Siswa</h5>
+            <canvas id="siswaChart" style="height: 300px;"
+                    data-putra="{{ jumlah_putra }}"
+                    data-putri="{{ jumlah_putri }}"></canvas>
+        </div>
+
+        <!-- Line Chart Kehadiran Siswa -->
+        <div class="col-md-8 mb-4">
+            <h5 style="margin-bottom: 30px;" class="text-center">Statistik Kehadiran Siswa Bulan {{ bulan|date:"F Y" }}</h5>
+            {{ absensi_bulan|json_script:"absensi-data" }}
+            <canvas id="absensiChart" style="height: 300px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // ===== Pie Chart Siswa =====
+    const siswaCanvas = document.getElementById('siswaChart');
+    new Chart(siswaCanvas.getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: ['Laki-laki', 'Perempuan'],
+            datasets: [{
+                data: [
+                    Number(siswaCanvas.dataset.putra),
+                    Number(siswaCanvas.dataset.putri)
+                ],
+                backgroundColor: ['#4facfe', '#f857a6'],
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // ===== Line Chart Kehadiran =====
+    const absensiCanvas = document.getElementById('absensiChart');
+    const absensiData = JSON.parse(document.getElementById('absensi-data').textContent);
+
+    const labels = Object.keys(absensiData);
+    const hadir = [], izin = [], sakit = [], alpha = [];
+
+    labels.forEach(tgl => {
+        hadir.push(absensiData[tgl]['Hadir'] || 0);
+        izin.push(absensiData[tgl]['Izin'] || 0);
+        sakit.push(absensiData[tgl]['Sakit'] || 0);
+        alpha.push(absensiData[tgl]['Alpha'] || 0);
+    });
+
+    new Chart(absensiCanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Hadir', data: hadir, borderColor: '#4facfe', backgroundColor: 'transparent', tension: 0.3 },
+                { label: 'Izin', data: izin, borderColor: '#f857a6', backgroundColor: 'transparent', tension: 0.3 },
+                { label: 'Sakit', data: sakit, borderColor: '#fbc2eb', backgroundColor: 'transparent', tension: 0.3 },
+                { label: 'Alpha', data: alpha, borderColor: '#ffb347', backgroundColor: 'transparent', tension: 0.3 }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true, stepSize: 1 } }
+        }
+    });
+
+});
+</script>
+{% endblock %}
