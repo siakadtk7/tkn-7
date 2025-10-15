@@ -181,10 +181,17 @@
             class="{% if request.resolver_match.url_name == 'data_guru' %}active{% endif %}">
             <i class='bx bxs-user-account'></i> Data Guru
         </a>
+<<<<<<< HEAD
         {% comment %} <a href="{% url 'manage_users' %}"
             class="{% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}">
             <i class='bx bxs-user-plus'></i> Kelola User
         </a> {% endcomment %}
+=======
+        <a href="{% url 'manage_users' %}"
+            class="{% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}">
+            <i class='bx bxs-user-plus'></i> Kelola User
+        </a>
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
         <a href="{% url 'absensi' %}" class="{% if request.resolver_match.url_name == 'absensi' %}active{% endif %}">
             <i class='bx bxs-book-bookmark'></i> Presensi Siswa
         </a>

@@ -1,8 +1,12 @@
+<<<<<<< HEAD
 annotated-types==0.7.0
+=======
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
 arabic-reshaper==3.0.0
 asgiref==3.8.1
 asn1crypto==1.5.1
 Brotli==1.1.0
+<<<<<<< HEAD
 cachetools==6.2.0
 certifi==2025.6.15
 cffi==1.17.1
@@ -12,6 +16,14 @@ crispy-bootstrap5==2025.6
 cryptography==45.0.4
 cssselect2==0.8.0
 dj-database-url==2.1.0
+=======
+certifi==2025.6.15
+cffi==1.17.1
+charset-normalizer==3.4.2
+crispy-bootstrap5==2025.6
+cryptography==45.0.4
+cssselect2==0.8.0
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
 Django==5.1.6
 django-allauth==65.10.0
 django-crispy-forms==2.4
@@ -20,6 +32,7 @@ django-filter==25.1
 django-widget-tweaks==1.5.0
 et_xmlfile==2.0.0
 fonttools==4.59.0
+<<<<<<< HEAD
 google-ai-generativelanguage==0.6.15
 google-api-core==2.25.2
 google-api-python-client==2.184.0
@@ -50,6 +63,19 @@ pyasn1_modules==0.4.2
 pycparser==2.22
 pydantic==2.11.10
 pydantic_core==2.33.2
+=======
+graphviz==0.21
+holidays==0.79
+html5lib==1.1
+idna==3.10
+lxml==5.4.0
+openpyxl==3.1.5
+oscrypto==1.3.0
+pillow==11.2.1
+pip==24.0
+psycopg2-binary==2.9.10
+pycparser==2.22
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
 pydot==4.0.1
 pydotplus==2.0.2
 pydyf==0.11.0
@@ -62,17 +88,24 @@ pyphen==0.17.2
 python-bidi==0.6.6
 python-dateutil==2.9.0.post0
 python-docx==1.2.0
+<<<<<<< HEAD
 python-dotenv==1.0.1
 pytz==2025.2
 PyYAML==6.0.2
 reportlab==4.4.2
 requests==2.32.4
 rsa==4.9.1
+=======
+PyYAML==6.0.2
+reportlab==4.4.2
+requests==2.32.4
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
 six==1.17.0
 sqlparse==0.5.3
 svglib==1.5.1
 tinycss2==1.4.0
 tinyhtml5==2.0.0
+<<<<<<< HEAD
 tqdm==4.67.1
 typing-inspection==0.4.2
 typing_extensions==4.14.1
@@ -85,3 +118,13 @@ weasyprint==66.0
 webencodings==0.5.1
 xhtml2pdf==0.2.17
 zopfli==0.2.3.post1
+=======
+typing_extensions==4.14.1
+tzdata==2025.1
+tzlocal==5.3.1
+uritools==5.0.0
+urllib3==2.5.0
+zopfli==0.2.3.post1
+google-generativeai
+dj-database-url
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3

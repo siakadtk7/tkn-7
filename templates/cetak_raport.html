@@ -14,6 +14,7 @@
     height: 1.5em;
     margin-bottom: 1em;
 }
+<<<<<<< HEAD
 
 /*!
  * Bootstrap Icons (https://icons.getbootstrap.com)
@@ -22,6 +23,8 @@
  */
 @font-face{font-family:"bootstrap-icons";src:url('/static/fonts/bootstrap-icons/bootstrap-icons.woff2') format('woff2'),url('/static/fonts/bootstrap-icons/bootstrap-icons.woff') format('woff'),url('/static/fonts/bootstrap-icons/bootstrap-icons.ttf') format('truetype')}
 .bi::before, [class*=" bi-"]::before{display:inline-block;font-family:"bootstrap-icons"!important;font-style:normal;font-weight:normal!important;line-height:1;text-rendering:auto;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.bi-heart::before{content:"\f443"}.bi-book::before{content:"\f11d"}.bi-x-circle::before{content:"\f5b3"}.bi-x::before{content:"\f5b3"}
+=======
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
 </style>
 
 <!-- ================= Wrapper Utama ================= -->
@@ -46,6 +49,7 @@
         {% endif %}
     </div>
 
+<<<<<<< HEAD
     <table class="table table-borderless" style="width: 100%;">
         <tr>
             <td style="width: 40%; vertical-align: top;">
@@ -90,6 +94,36 @@
     </table>
 
 <hr><hr>
+=======
+    <table class="table table-borderless" style="max-width: 400px;">
+        <tr>
+            <td><strong>Nama</strong></td>
+            <td>: {{ siswa.nama }}</td>
+        </tr>
+        <tr>
+            <td><strong>Nomor Induk</strong></td>
+            <td>: {{ siswa.nomor_induk }}</td>
+        </tr>
+        <tr>
+            <td><strong>NISN</strong></td>
+            <td>: {{ siswa.nisn }}</td>
+        </tr>
+        <tr>
+            <td><strong>Semester</strong></td>
+            <td>: {{ semester }}</td>
+        </tr>
+        <tr>
+            <td><strong>Tahun Ajaran</strong></td>
+            <td>: {{ tahun_ajaran }}</td>
+        </tr>
+        <tr>
+            <td><strong>Kelas</strong></td>
+            <td>: {{ kelas_nama }}</td>
+        </tr>
+    </table>
+
+<hr><br>
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
 
     <!-- Laporan Aspek -->
     {% for aspek in aspek_list %}
@@ -98,8 +132,12 @@
             style="background-color: #f2f2f2; 
                    padding: 0.5rem 0.75rem; 
                    margin-bottom: 1rem; 
+<<<<<<< HEAD
                    border-radius: 0.4rem; 
                    text-transform: capitalize;">
+=======
+                   border-radius: 0.4rem;">
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
             {{ aspek.aspek.nama_aspek }}
         </h5>
 
@@ -107,7 +145,11 @@
         <div style="overflow: hidden;">
             <img src="{{ aspek.foto.url }}" 
                  alt="Foto {{ aspek.aspek.nama_aspek }}" 
+<<<<<<< HEAD
                  style="float: left; width: {{ aspek.display_width }}; height: {{ aspek.display_height }}; object-fit: cover; margin-right: 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem;">
+=======
+                 style="float: left; width: 400px; max-width: 100%; margin-right: 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem;">
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
             <p style="text-align: justify;">{{ aspek.deskripsi|default:"-" }}</p>
         </div>
         {% else %}
@@ -128,7 +170,11 @@
         <div style="border: 1px solid #ccc; border-radius: 0.5rem; padding: 1rem; min-height: 100px;">
             {% for refleksi in refleksi_list %}
                 <div style="margin-bottom: 1.5rem;">
+<<<<<<< HEAD
                     <p style="margin-bottom: 0.3rem;">{{ forloop.counter }}. {{ refleksi.teks }}?</p>
+=======
+                    <p style="margin-bottom: 0.5rem;">{{ forloop.counter }}. {{ refleksi.teks }}?</p>
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
                     <div class="dotted-line-answer"></div>
                     <div class="dotted-line-answer"></div>
                     <div class="dotted-line-answer"></div>
@@ -147,19 +193,31 @@
         <!-- Sakit -->
         <div style="flex: 1; background-color: #fce4e4; color: #a94442; 
                     padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+<<<<<<< HEAD
             <i class='bi bi-heart' style="font-size:1.5rem;"></i><br>
+=======
+            <i class='bx bx-heart' style="font-size:1.5rem;"></i><br>
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
             Sakit : {{ total_sakit }} Hari
         </div>
         <!-- Izin -->
         <div style="flex: 1; background-color: #fff8e1; color: #8a6d3b; 
                     padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+<<<<<<< HEAD
             <i class='bi bi-book' style="font-size:1.5rem;"></i><br>
+=======
+            <i class='bx bx-book' style="font-size:1.5rem;"></i><br>
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
             Izin : {{ total_izin }} Hari
         </div>
         <!-- Alpha -->
         <div style="flex: 1; background-color: #fde2e2; color: #a94442; 
                     padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: bold;">
+<<<<<<< HEAD
             <i class='bi bi-x' style="font-size:1.5rem;"></i><br>
+=======
+            <i class='bx bx-x-circle' style="font-size:1.5rem;"></i><br>
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
             Tanpa Keterangan : {{ total_alpha }} Hari
         </div>
     </div>
@@ -168,11 +226,19 @@
 
     <!-- Tanda Tangan -->
     <div class="mt-5" style="max-width: 900px; margin: auto;">
+<<<<<<< HEAD
         <div class="d-flex justify-content-between" style="margin-bottom: 2rem;">
             <!-- Orang Tua / Wali -->
             <div class="text-center" style="flex: 1;">
                 <p>Orang Tua / Wali,</p>
                 <div style="height: 60px;"></div> <!-- ruang tanda tangan -->
+=======
+        <div class="d-flex justify-content-between" style="margin-bottom: 4rem;">
+            <!-- Orang Tua / Wali -->
+            <div class="text-center" style="flex: 1;">
+                <p>Orang Tua / Wali,</p>
+                <div style="height: 80px;"></div> <!-- ruang tanda tangan -->
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
                 <p style="font-weight: bold;">
                     {{ siswa.nama_ayah }}
                 </p>
@@ -180,7 +246,11 @@
             <!-- Guru -->
             <div class="text-center" style="flex: 1;">
             <p>Wali Kelas,</p>
+<<<<<<< HEAD
             <div style="height: 60px;"></div> <!-- ruang tanda tangan -->
+=======
+            <div style="height: 80px;"></div> <!-- ruang tanda tangan -->
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
             <p style="font-weight: bold; margin-bottom: 0; line-height: 1;">{{ wali_kelas.nama|title }}</p>
             <p style="line-height: 1.5;">NIP. {{ wali_kelas.nip }}</p>
             </div>
@@ -190,10 +260,18 @@
         <div class="text-center mt-3">
             <p style="margin-bottom: 0; line-height: 1;">Mengetahui,</p>
             <p style="line-height: 1;">Kepala TK Negeri 7 Tanjungpinang</p>
+<<<<<<< HEAD
             <div style="height: 60px;"></div> <!-- ruang tanda tangan -->
+=======
+            <div style="height: 80px;"></div> <!-- ruang tanda tangan -->
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
             <p style="font-weight: bold; margin-bottom: 0; line-height: 1;">{{ kepala_sekolah.nama|title }}</p>
             <p style="line-height: 1.5;">NIP. {{ kepala_sekolah.nip }}</p>
         </div>
     </div>
 </div>
+<<<<<<< HEAD
 {% endblock %}
+=======
+{% endblock %}
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3

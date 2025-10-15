@@ -18,7 +18,10 @@ urlpatterns = [
 
     path('data-siswa/', views.data_siswa, name='data_siswa'),
     path('siswa/', views.data_siswa, name='data_siswa'),
+<<<<<<< HEAD
     path('siswa/download/', views.download_siswa_excel, name='download_siswa_excel'),
+=======
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
     path('siswa/tambah/', views.siswa_tambah, name='siswa_tambah'),
     path('siswa/edit/<int:pk>/', views.siswa_edit, name='siswa_edit'),
     path("siswa/delete/<int:pk>/", views.siswa_delete, name="siswa_delete"), 

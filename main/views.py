@@ -543,8 +543,11 @@ def data_guru(request):
     if request.method == 'POST':
         edit_id = request.GET.get('edit_id')  # jika edit
         nip = request.POST.get('nip')
+<<<<<<< HEAD
         if not nip:
             nip = None
+=======
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
         nama = request.POST.get('nama')
         jabatan = request.POST.get('jabatan')
         tempat_lahir = request.POST.get('tempat_lahir')
@@ -553,7 +556,15 @@ def data_guru(request):
         alamat = request.POST.get('alamat')
         foto = request.FILES.get('foto')
 
+<<<<<<< HEAD
 
+=======
+        # Validasi NIP berdasarkan Jabatan
+        required_jabatan = ['guru', 'kepala_sekolah', 'pengawas_tk', 'wali_kelas']
+        if jabatan in required_jabatan and not nip:
+            messages.error(request, f"NIP wajib diisi untuk jabatan {jabatan}.")
+            return redirect('data_guru')
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
 
         # Validasi NIP duplikat di server
         is_duplicate = Guru.objects.filter(nip=nip).exclude(pk=edit_id).exists()
@@ -1516,6 +1527,7 @@ def cetak_raport(request, siswa_id):
             # Build the list for the template
             for aspek_template in all_aspek_for_year:
                 # Get the saved data or create an empty placeholder in memory
+<<<<<<< HEAD
                 aspek_data = existing_aspek_data.get(aspek_template.id, None)
 
                 if aspek_data is None:
@@ -1549,6 +1561,11 @@ def cetak_raport(request, siswa_id):
                     aspek_data.display_width = 'auto'
                     aspek_data.display_height = 'auto'
                 # --- AKHIR LOGIKA DIMENSI GAMBAR ---
+=======
+                aspek_data = existing_aspek_data.get(aspek_template.id, 
+                    LaporanAspek(laporan=laporan, aspek=aspek_template, deskripsi='', foto=None)
+                )
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
                 aspek_list_for_template.append(aspek_data)
 
         except TahunAjaran.DoesNotExist:
@@ -1637,6 +1654,7 @@ def raport_pdf(request, laporan_id):
             aspek_data = existing_aspek_data.get(aspek_template.id, 
                 LaporanAspek(laporan=laporan, aspek=aspek_template, deskripsi='', foto=None)
             )
+<<<<<<< HEAD
             if aspek_data.foto and hasattr(aspek_data.foto, 'width') and hasattr(aspek_data.foto, 'height'):
                 if aspek_data.foto.width > aspek_data.foto.height:
                     aspek_data.orientation = 'landscape'
@@ -1654,6 +1672,8 @@ def raport_pdf(request, laporan_id):
                 aspek_data.orientation = 'none'
                 aspek_data.display_width = 'auto'
                 aspek_data.display_height = 'auto'
+=======
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
             aspek_list_for_template.append(aspek_data)
     except TahunAjaran.DoesNotExist:
         pass
@@ -1705,7 +1725,11 @@ def raport_pdf(request, laporan_id):
     }
 
     # 6. Render cetak_raport.html
+<<<<<<< HEAD
     html_string = render_to_string('raport_pdf.html', context, request=request)
+=======
+    html_string = render_to_string('cetak_raport.html', context, request=request)
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
     html = HTML(string=html_string, base_url=request.build_absolute_uri('/'))
     
     response = HttpResponse(content_type='application/pdf')
@@ -1974,6 +1998,7 @@ def hapus_refleksi_ajax(request, refleksi_id):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
             
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+<<<<<<< HEAD
 
 import pandas as pd
 
@@ -2014,3 +2039,5 @@ def download_siswa_excel(request):
     df.to_excel(response, index=False)
     
     return response
+=======
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3

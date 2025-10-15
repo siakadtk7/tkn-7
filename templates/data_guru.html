@@ -90,7 +90,11 @@
                           <i class="bx bx-user-circle" style="font-size: 2rem;"></i>
                       {% endif %}
                   </td>
+<<<<<<< HEAD
                   <td>{{ guru.nip|default_if_none:"" }}</td>
+=======
+                  <td>{{ guru.nip }}</td>
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
                   <td style="width: 20%;">{{ guru.nama|title }}</td>
                   <td>{{ guru.get_jabatan_display|title }}</td>
                   <td>{{ guru.tempat_lahir|title }}<br>{{ guru.tanggal_lahir|date:"d M Y" }}</td>
@@ -102,7 +106,11 @@
                   <td style="white-space: nowrap;">
                       <button class="btn btn-sm btn-warning editBtn btn-action-icon"
                               data-id="{{ guru.id }}"
+<<<<<<< HEAD
                               data-nip="{{ guru.nip|default_if_none:"" }}"
+=======
+                              data-nip="{{ guru.nip }}"
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
                               data-nama="{{ guru.nama }}"
                               data-jabatan="{{ guru.jabatan }}"
                               data-tempat="{{ guru.tempat_lahir }}"
@@ -186,7 +194,11 @@
             <div class="row mb-3">
               <div class="col-md-6">
                 <label>NIP</label>
+<<<<<<< HEAD
                 <input type="text" name="nip" id="guruNIP" class="form-control" oninput="this.value = this.value.replace(/\D/g, '')">
+=======
+                <input type="text" name="nip" id="guruNIP" class="form-control" required oninput="this.value = this.value.replace(/\D/g, '')">
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
                 <div id="nip-error" class="form-text text-danger mt-1"></div>
               </div>
               <div class="col-md-6">
@@ -335,7 +347,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+<<<<<<< HEAD
 
+=======
+    // --- Validasi Jabatan terhadap NIP ---
+    const guruJabatanSelect = document.getElementById('guruJabatan');
+    const guruNIPInput = document.getElementById('guruNIP');
+
+    guruJabatanSelect.addEventListener('change', function() {
+        const selectedJabatan = this.value;
+        const requiredJabatan = ['guru', 'kepala_sekolah', 'pengawas_tk', 'wali_kelas'];
+        guruNIPInput.required = requiredJabatan.includes(selectedJabatan);
+    });
+>>>>>>> 9b78fbe049163d23ecef90cfa98626ad3a8f1fa3
 
     // --- Kapitalisasi Otomatis ---
     function capitalizeEachWord(str) {
